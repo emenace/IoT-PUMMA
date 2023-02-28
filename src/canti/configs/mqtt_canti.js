@@ -11,4 +11,8 @@ const mqtt = Mqtt.connect(process.env.MQTT_HOST, {
     clean: true,
 });
 
+mqtt.on("connect", () => {
+    console.log(`MQTT Connected on host : ${process.env.MQTT_HOST}`); 
+})
+
 module.exports = mqtt;

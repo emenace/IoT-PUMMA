@@ -5,6 +5,7 @@ module.exports = {
 
     // HTTP HANDLING
 
+    // Respond request to give latest 100 data
     getDataCanti(req,res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
@@ -20,6 +21,7 @@ module.exports = {
         });
     },
 
+    // Respond request to give latest data by count
     getDataCantiByID(req,res){
         let count = parseInt(req.params.count);
         dbase_rest.connect(function (err, client, done){
@@ -36,6 +38,7 @@ module.exports = {
         });
     },
 
+    // Respond request to give last 1 day data
     getDayCanti1(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
@@ -51,6 +54,7 @@ module.exports = {
         });
     },
 
+    // Respond request to give last 3 day data
     getDayCanti3(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
@@ -65,7 +69,8 @@ module.exports = {
             });
         });
     },
-
+    
+    // Respond request to give last 7 day data
     getDayCanti7(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
