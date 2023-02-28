@@ -2,9 +2,9 @@
   "name": "iot_pumma",
   "version": "1.0.0",
   "description": "IoT Handler for EWS System",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js"
   },
   "author": "Emenace",
   "license": "ISC",
