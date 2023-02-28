@@ -4,6 +4,8 @@ require('dotenv').config()
 module.exports = {
 
     // HTTP HANDLING
+    // This code is based on routes  ../src/canti/controllers/controller_mqtt_canti.js
+    // If want to add new API, dont forget to add new routes
 
     // Respond request to give latest 100 data
     getDataCanti(req,res){

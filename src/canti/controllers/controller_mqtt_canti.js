@@ -48,48 +48,45 @@ module.exports = {
                 }
             }
 
-            //Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
-            //If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
-            if (payload.hasOwnProperty(TEMP_PATH)) {TEMP = parseFloat(payload[TEMP_PATH]);} else {
-                dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
-                    if (result.rows[0].case === 0){
-                        console.log("Table is empty");
-                        // If table is empty, value of variables set to 0.
-                        TEMP = 0;
-                    } 
-                    else {
-                        //get last data from database.
-                        dbase_mqtt.query("SELECT temperature FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 1", function(err, result){
-                            if (!err){
-                                // If table is not empty, value of variables set from database.
-                                TEMP = (result.rows[0].temperature);
-                            } else throw (err);
-                        });
-                        
-                    };
-                });
-            };
+                // TEMPORARY. Add value to voltage and temp because its not available now
+                if ((VOLTAGE === null) || TEMP === null){
+                    VOLTAGE = 12;
+                    TEMP = 20;
+                } // DELETE IF NOT USE
 
-            if (payload.hasOwnProperty(VOLTAGE_PATH)) {VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);} else {
-                //Checking if data is available
-                dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
-                    if (result.rows[0].case === 0){
-                        console.log("Table is empty");
-                        // If table is empty, value of variables set to 0.
-                        VOLTAGE = 0;
-                    } 
-                    else {
-                        //get last data from database.
-                        dbase_mqtt.query("SELECT voltage FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 1", function(err, result){
-                            if (!err){
-                                // If table is not empty, value of variables set from database.
+            // Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
+            // If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
+            
+            // Check data is available or not in database   
+            dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
+                if (result.rows[0].case === 0){
+                    console.log("Table is empty. no value about voltage and temp. use 0 instead");
+                    // If table is empty, value of variables set to 0.
+                    TEMP = 0;
+                    VOLTAGE = 0;
+                } 
+                else {
+                    //get last data from database.
+                    dbase_mqtt.query("SELECT temperature, voltage FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 1", function(err, result){
+                        if (!err){
+
+                            // Checking payload has temp or not
+                            if (payload.hasOwnProperty(TEMP_PATH)) {
+                                TEMP = parseFloat(payload[TEMP_PATH]);
+                            } else {
+                                TEMP = (result.rows[0].temperature); //use latest data from database if temperature not available
+                            }
+
+                            // Checking payload has voltage or not
+                            if (payload.hasOwnProperty(TEMP_PATH)) {
                                 VOLTAGE = (result.rows[0].voltage);
-                            } else throw (err);
-                        });
-                        
-                    };
-                });
-            };
+                            } else {
+                                TEMP = (result.rows[0].temperature); //use latest data from database if voltage not available
+                            }
+                        } else throw (err);
+                    });
+                };
+            });
 
             // Forecasting 30 & RMS
             // Get 30 data for forecasting
@@ -174,12 +171,6 @@ module.exports = {
                                 "threshold":RMSTHRESHOLD, "status":STATUSWARNING}
             mqtt_connect.publish('pummamqtt/canti/2',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {if (err) {console.log(err);};
 
-            // TEMPORARY. Add value to voltage and temp because its not available now
-            if ((VOLTAGE === null) || TEMP === null){
-                VOLTAGE = 12;
-                TEMP = 20;
-            }
-
             //INSERT ALL DATA TO DATABASE
             const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
             const insertQuery = `INSERT INTO mqtt_canti(time, date, waterlevel, voltage, temperature, 
@@ -193,7 +184,6 @@ module.exports = {
 
         // Handling topic 2 (API)
         if (topic === TOPIC_API) {
-            console.log(`API Requested on topic : ${topic}`);
             payload = (message.toString());
             
             if (payload === "getDataCanti"){
