@@ -24,12 +24,15 @@ var STATUSWARNING;
 module.exports = {
 
     // MQTT HANDLING
-    incomingData1(topic,message){
-        if (topic === TOPIC_1){
-            console.log(`Incoming Data From Topic ${topic}`);
-            const payload = JSON.parse(message.toString());
-            //console.log(payload);
+    incomingData(topic,message){
 
+        // Handling data from topic 1 (data from raspberrypi)
+        if (topic === TOPIC_1){
+            
+            // Save subscribed message to payload variable
+            const payload = JSON.parse(message.toString());
+
+            // Checking property of Time, Date, and Waterlevel. so it will never null
             if ((payload.hasOwnProperty(TS_PATH)) 
                 && (payload.hasOwnProperty(DATE_PATH)) 
                 && (payload.hasOwnProperty(WATERLEVEL_PATH))){
@@ -46,7 +49,7 @@ module.exports = {
             }
 
             //Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
-            //If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database (checkdata function).
+            //If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
             if (payload.hasOwnProperty(TEMP_PATH)) {TEMP = parseFloat(payload[TEMP_PATH]);} else {
                 dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
                     if (result.rows[0].case === 0){
@@ -66,7 +69,7 @@ module.exports = {
                     };
                 });
             };
-            
+
             if (payload.hasOwnProperty(VOLTAGE_PATH)) {VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);} else {
                 //Checking if data is available
                 dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
@@ -89,8 +92,8 @@ module.exports = {
             };
 
             // Forecasting 30 & RMS
-            //Get 30 data for forecasting
-            //30 forecast : 29 data from db, 1 data from mqtt
+            // Get 30 data for forecasting
+            // 30 forecast : 29 data from db, 1 data from mqtt
             dbase_mqtt.query(`SELECT waterlevel FROM mqtt_canti 
                         ORDER BY date DESC, time DESC LIMIT 29;`,function(err,result){
 
@@ -127,9 +130,9 @@ module.exports = {
                 RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2));   
             });
 
-            //Forecasting 300 & RMS
-            //Get 30 data for forecasting
-            //300 forecast : 299 data from db, 1 data from mqtt
+            // Forecasting 300 & RMS
+            // Get 30 data for forecasting
+            // 300 forecast : 299 data from db, 1 data from mqtt
             dbase_mqtt.query(`SELECT waterlevel FROM mqtt_canti 
                         ORDER BY date DESC, time DESC LIMIT 299;`,function(err,result){
                 if (err) throw err;
@@ -151,16 +154,19 @@ module.exports = {
                 FORECAST300 = parseFloat(forecast(301).toFixed(2));
             });
 
-            //Threshold logic
+            // Threshold logic
             if (WATERLEVEL >= RMSTHRESHOLD) {
             STATUSWARNING = "WARNING";
             } else STATUSWARNING = "SAFE";
 
-            console.log(`
-            Time : ${TS}, Date : ${DATE}, WaterLevel : ${WATERLEVEL}, FC30 : ${FORECAST30}, FC300 : ${FORECAST300}
-            Temperature : ${TEMP}, Voltage : ${VOLTAGE}
-            RMS : ${RMSROOT}, THRESHOLD : ${RMSTHRESHOLD}
-            STATUS : ${STATUSWARNING}`);
+            // Show All Data To console.log 
+            // Uncomment console.log below to show data on terminal
+
+            // console.log(`
+            // Time : ${TS}, Date : ${DATE}, WaterLevel : ${WATERLEVEL}, FC30 : ${FORECAST30}, FC300 : ${FORECAST300}
+            // Temperature : ${TEMP}, Voltage : ${VOLTAGE}
+            // RMS : ${RMSROOT}, THRESHOLD : ${RMSTHRESHOLD}
+            // STATUS : ${STATUSWARNING}`);
 
             //PUBLISH ALL DATA TO NEW TOPIC ON MQTT
             const jsonToPublish = {"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
@@ -168,20 +174,35 @@ module.exports = {
                                 "threshold":RMSTHRESHOLD, "status":STATUSWARNING}
             mqtt_connect.publish('pummamqtt/canti/2',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {if (err) {console.log(err);};
 
-            //INSERT ALL DATA TO DATABASE
+            // TEMPORARY. Add value to voltage and temp because its not available now
             if ((VOLTAGE === null) || TEMP === null){
                 VOLTAGE = 12;
                 TEMP = 20;
             }
+
+            //INSERT ALL DATA TO DATABASE
             const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300]; 
             const insertQuery = `INSERT INTO mqtt_canti(time, date, waterlevel, voltage, temperature, 
                                 forecast30, forecast300) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
             dbase_mqtt.query(insertQuery, dataArray, (err, res) => {
                 if (err) throw err;
-                //console.log(`Data : ${JSON.stringify(jsonToPublish)} INSERTED TO DATABASE`);
-                //console.log(`DATA INSERTED TO DATABASE : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
+                console.log(`DATA INSERTED TO DATABASE : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
             });       
         });
+        }
+
+        // Handling topic 2 (API)
+        if (topic === TOPIC_API) {
+            console.log(`API Requested on topic : ${topic}`);
+            payload = (message.toString());
+            
+            if (payload === "getDataCanti"){
+                dbase_mqtt.query("SELECT * FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 100", function(err, result){
+                    if (err) throw (err);
+                    mqtt_connect.publish(TOPIC_API,JSON.stringify(result.rows.reverse()), {qos:2, retain:true});
+                    console.log("Data published");
+                });
+            } 
         }
     }
 }
