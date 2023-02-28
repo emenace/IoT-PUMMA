@@ -111,12 +111,6 @@ module.exports = {
 
                 timeSeries.reverse(); 
                 timeWater.reverse();//reverse descending data from db and mqtt
-                
-                //TESTING PURPOSE
-                var tw30 = timeWater;
-                mqtt_connect.publish('pummamqtt/canti/chart/',JSON.stringify(tw30), {qos: 0, retain:false}, (err) => {
-                    if (err) {console.log(err);}
-                });
 
                 var forecast = lsq(timeSeries, timeWater);
                 FORECAST30 = parseFloat(forecast(31).toFixed(2));
@@ -169,7 +163,7 @@ module.exports = {
             const jsonToPublish = {"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
                                 "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
                                 "threshold":RMSTHRESHOLD, "status":STATUSWARNING}
-            mqtt_connect.publish('pummamqtt/canti/2',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {if (err) {console.log(err);};
+            mqtt_connect.publish('pummamqtt/canti',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {if (err) {console.log(err);};
 
             //INSERT ALL DATA TO DATABASE
             const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
@@ -194,6 +188,43 @@ module.exports = {
                 });
             } 
         }
+
+        // Publish Chart Data
+        dbase_mqtt.query(`SELECT waterlevel,forecast30,forecast300,rms,threshold FROM mqtt_canti 
+                        ORDER BY date DESC, time DESC LIMIT 30;`,function(err,result){
+            if (err) throw (err);
+
+            var DATA_ARRAY_WATERLEVEL = [];
+            var DATA_ARRAY_FORECAST30 = [];
+            var DATA_ARRAY_FORECAST300 = [];
+            var DATA_ARRAY_RMS = [];
+            var DATA_ARRAY_THRESHOLD = [];
+
+            for (i=0 ; i<=result.rowCount-1; i++){
+                DATA_ARRAY_WATERLEVEL.push(result.rows[i].waterlevel);
+                DATA_ARRAY_FORECAST30.push(result.rows[i].forecast30);
+                DATA_ARRAY_FORECAST300.push(result.rows[i].forecast300);
+                DATA_ARRAY_RMS.push(result.rows[i].rms);
+                DATA_ARRAY_THRESHOLD.push(result.rows[i].threshold);
+            } 
+            mqtt_connect.publish('pummamqtt/canti/chart/waterLevel',JSON.stringify(DATA_ARRAY_WATERLEVEL.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+       
+            mqtt_connect.publish('pummamqtt/canti/chart/forecast30',JSON.stringify(DATA_ARRAY_FORECAST30.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            
+            mqtt_connect.publish('pummamqtt/canti/chart/forecast300',JSON.stringify(DATA_ARRAY_FORECAST300.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+           
+            mqtt_connect.publish('pummamqtt/canti/chart/rms',JSON.stringify(DATA_ARRAY_RMS.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            
+            mqtt_connect.publish('pummamqtt/canti/chart/threshold',JSON.stringify(DATA_ARRAY_THRESHOLD.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            
+        });
+
+        
+
     }
 }
-     
