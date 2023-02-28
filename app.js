@@ -1,3 +1,4 @@
+const dbase_mqtt = require('./src/canti/configs/database_canti');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -12,7 +13,7 @@ api.use(cors({
 }));
 
 // CHECK for database. create if database not exist
-dbase.query(` CREATE TABLE IF NOT EXISTS mqtt_canti (
+dbase_mqtt.query(` CREATE TABLE IF NOT EXISTS mqtt_canti (
   time TIME NOT NULL, 
   date DATE NOT NULL, 
   waterLevel FLOAT, 
@@ -33,8 +34,8 @@ api.use('/', cors(), (req, res) => {
     res.status(404);
     res.send('404 Not Found');
 });     
-api.listen(8080, ()=>{
-    console.log('HTTP REST-API Berjalan di Port : 8080');
+api.listen(process.env.API_PORT, ()=>{
+    console.log('HTTP REST-API Berjalan di Port : ',process.env.API_PORT);
 });
 
 //// MQTT HANDLING FOR CANTI

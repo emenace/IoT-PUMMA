@@ -181,9 +181,9 @@ module.exports = {
             }
 
             //INSERT ALL DATA TO DATABASE
-            const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300]; 
+            const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
             const insertQuery = `INSERT INTO mqtt_canti(time, date, waterlevel, voltage, temperature, 
-                                forecast30, forecast300) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+                                forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
             dbase_mqtt.query(insertQuery, dataArray, (err, res) => {
                 if (err) throw err;
                 console.log(`DATA INSERTED TO DATABASE : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
