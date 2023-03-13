@@ -13,19 +13,36 @@ api.use(cors({
 }));
 
 // CHECK for database. create if database not exist
-const dbase_mqtt = require('./src/canti/configs/database_canti'); 
-dbase_mqtt.query(` CREATE TABLE IF NOT EXISTS mqtt_canti (
+const dbase_canti = require('./src/canti/configs/database_canti'); 
+dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti (
   time TIME NOT NULL, 
   date DATE NOT NULL, 
   waterLevel FLOAT, 
   voltage FLOAT, 
   temperature FLOAT,
   forecast30 FLOAT, 
-  forecast 300 FLOAT,
+  forecast300 FLOAT,
   rms FLOAT,
-  threshold FLOAT )
+  threshold FLOAT)
   `, function(err, result){
     console.log("Database Canti Connected");
+  });
+
+const dbase_petengoran = require('./src/petengoran/configs/database_petengoran'); 
+dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
+  id BIGINT NOT NULL PRIMARY KEY,
+  datetime TIMESTAMP NOT NULL,
+  time TIME NOT NULL, 
+  date DATE NOT NULL, 
+  waterLevel FLOAT, 
+  voltage FLOAT, 
+  temperature FLOAT,
+  forecast30 FLOAT, 
+  forecast300 FLOAT,
+  rms FLOAT,
+  threshold FLOAT)
+  `, function(err, result){
+    console.log("Database Petengoran Connected");
   });
             
 
@@ -41,20 +58,36 @@ api.listen(process.env.API_PORT, ()=>{
     console.log('HTTP REST-API Berjalan di Port : ',process.env.API_PORT);
 });
 
-//// MQTT HANDLING FOR CANTI
-const { incomingData } = require('./src/canti/controllers/controller_mqtt_canti');
-const mqtt_connect = require('./src/canti/configs/mqtt_canti')
+//// MQTT HANDLING 
+const mqtt_connect = require('./src/global_config/mqtt_config')
+const { incomingData_canti } = require('./src/canti/controllers/controller_mqtt_canti');
+const { incomingData_petengoran } = require('./src/petengoran/controllers/controller_mqtt_petengoran');
+
+//Topic Use in Canti
 const topic1 = process.env.TOPIC_1; //Topic to receive data from raspberrypi
 const topic2 = process.env.TOPIC_2; //Topic to receive API request
 
+//Topic Use in Petengoran
+const topic1_ptg = process.env.TOPIC_PETENGORAN1; //Topic to receive data from raspberrypi
+
 // Subscribe topic to receive data from raspberryPi
+// Data From Canti
 mqtt_connect.subscribe(topic1, (err) => {
   if (!err) {
     console.log("Subscribed to topic : " + topic1); 
   } else throw (err);
 });
 
+// Data From Petengoran
+mqtt_connect.subscribe(topic1_ptg, (err) => {
+  if (!err) {
+    console.log("Subscribed to topic : " + topic1_ptg); 
+  } else throw (err);
+});
+
+
 //Subscribe topic to receive API request
+//Test Only
 mqtt_connect.subscribe(topic2, (err) => {
   if (!err) {
     console.log("Subscribed to topic : " + topic2); 
@@ -62,7 +95,9 @@ mqtt_connect.subscribe(topic2, (err) => {
 });
 
 // Handle message from mqtt
-mqtt_connect.on("message", incomingData);
+mqtt_connect.on("message", incomingData_canti);
+mqtt_connect.on("message", incomingData_petengoran);
+
 
 
 

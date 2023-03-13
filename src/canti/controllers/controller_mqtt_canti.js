@@ -1,12 +1,11 @@
 const dbase_mqtt = require('../configs/database_canti');
-const mqtt_connect = require('../configs/mqtt_canti')
+const mqtt_connect = require('../../global_config/mqtt_config');
 const moment = require('moment-timezone');
 const lsq = require('least-squares'); //Least square method to forecasting
 
 require('dotenv').config()
 
 // PATH name check on .env
-TOPIC_1 = process.env.TOPIC_1;
 TOPIC_API = process.env.TOPIC_2;
 
 TS_PATH = process.env.PAYLOAD_CANTI_TS // Now using TSjsn;
@@ -25,10 +24,10 @@ var STATUSWARNING;
 module.exports = {
 
     // MQTT HANDLING
-    incomingData(topic,message){
+    incomingData_canti(topic,message){
 
         // Handling data from topic 1 (data from raspberrypi)
-        if (topic === TOPIC_1){
+        if (topic === process.env.TOPIC_1){
             
             // Save subscribed message to payload variable
             const payload = JSON.parse(message.toString());
@@ -47,7 +46,7 @@ module.exports = {
                     DATE = payload[DATE_PATH];
                     WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
 
-                    dateTime = DATE + TS;
+                    dateTime = DATE + 'T' + TS;
                     console.log(dateTime);
                 }
             }
@@ -175,7 +174,7 @@ module.exports = {
                                 forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
             dbase_mqtt.query(insertQuery, dataArray, (err, res) => {
                 if (err) throw err;
-                console.log(`DATA INSERTED TO DATABASE : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
+                console.log(`DB CANTI : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
             });       
         });
         }
