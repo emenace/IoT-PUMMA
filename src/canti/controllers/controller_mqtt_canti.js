@@ -1,5 +1,6 @@
 const dbase_mqtt = require('../configs/database_canti');
 const mqtt_connect = require('../configs/mqtt_canti')
+const moment = require('moment-timezone');
 const lsq = require('least-squares'); //Least square method to forecasting
 
 require('dotenv').config()
@@ -45,51 +46,51 @@ module.exports = {
                     TS = payload[TS_PATH]
                     DATE = payload[DATE_PATH];
                     WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
+
+                    dateTime = DATE + TS;
+                    console.log(dateTime);
                 }
             }
 
-            //Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
-            //If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
-            if (payload.hasOwnProperty(TEMP_PATH)) {TEMP = parseFloat(payload[TEMP_PATH]);} else {
-                dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
-                    if (result.rows[0].case === 0){
-                        console.log("Table is empty");
-                        // If table is empty, value of variables set to 0.
-                        TEMP = 0;
-                    } 
-                    else {
-                        //get last data from database.
-                        dbase_mqtt.query("SELECT temperature FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 1", function(err, result){
-                            if (!err){
-                                // If table is not empty, value of variables set from database.
-                                TEMP = (result.rows[0].temperature);
-                            } else throw (err);
-                        });
-                        
-                    };
-                });
-            };
+                // TEMPORARY. Add value to voltage and temp because its not available now
+                if ((VOLTAGE === null) || TEMP === null){
+                    VOLTAGE = 12;
+                    TEMP = 20;
+                } // DELETE IF NOT USE
 
-            if (payload.hasOwnProperty(VOLTAGE_PATH)) {VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);} else {
-                //Checking if data is available
-                dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
-                    if (result.rows[0].case === 0){
-                        console.log("Table is empty");
-                        // If table is empty, value of variables set to 0.
-                        VOLTAGE = 0;
-                    } 
-                    else {
-                        //get last data from database.
-                        dbase_mqtt.query("SELECT voltage FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 1", function(err, result){
-                            if (!err){
-                                // If table is not empty, value of variables set from database.
+            // Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
+            // If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
+            
+            // Check data is available or not in database   
+            dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
+                if (result.rows[0].case === 0){
+                    console.log("Table is empty. no value about voltage and temp. use 0 instead");
+                    // If table is empty, value of variables set to 0.
+                    TEMP = 0;
+                    VOLTAGE = 0;
+                } 
+                else {
+                    //get last data from database.
+                    dbase_mqtt.query("SELECT temperature, voltage FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 1", function(err, result){
+                        if (!err){
+
+                            // Checking payload has temp or not
+                            if (payload.hasOwnProperty(TEMP_PATH)) {
+                                TEMP = parseFloat(payload[TEMP_PATH]);
+                            } else {
+                                TEMP = (result.rows[0].temperature); //use latest data from database if temperature not available
+                            }
+
+                            // Checking payload has voltage or not
+                            if (payload.hasOwnProperty(TEMP_PATH)) {
                                 VOLTAGE = (result.rows[0].voltage);
-                            } else throw (err);
-                        });
-                        
-                    };
-                });
-            };
+                            } else {
+                                TEMP = (result.rows[0].temperature); //use latest data from database if voltage not available
+                            }
+                        } else throw (err);
+                    });
+                };
+            });
 
             // Forecasting 30 & RMS
             // Get 30 data for forecasting
@@ -114,12 +115,6 @@ module.exports = {
 
                 timeSeries.reverse(); 
                 timeWater.reverse();//reverse descending data from db and mqtt
-                
-                //TESTING PURPOSE
-                var tw30 = timeWater;
-                mqtt_connect.publish('pummamqtt/canti/chart/',JSON.stringify(tw30), {qos: 0, retain:false}, (err) => {
-                    if (err) {console.log(err);}
-                });
 
                 var forecast = lsq(timeSeries, timeWater);
                 FORECAST30 = parseFloat(forecast(31).toFixed(2));
@@ -172,18 +167,12 @@ module.exports = {
             const jsonToPublish = {"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
                                 "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
                                 "threshold":RMSTHRESHOLD, "status":STATUSWARNING}
-            mqtt_connect.publish('pummamqtt/canti/2',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {if (err) {console.log(err);};
-
-            // TEMPORARY. Add value to voltage and temp because its not available now
-            if ((VOLTAGE === null) || TEMP === null){
-                VOLTAGE = 12;
-                TEMP = 20;
-            }
+            mqtt_connect.publish('pummamqtt/canti',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {if (err) {console.log(err);};
 
             //INSERT ALL DATA TO DATABASE
-            const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300]; 
+            const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
             const insertQuery = `INSERT INTO mqtt_canti(time, date, waterlevel, voltage, temperature, 
-                                forecast30, forecast300) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+                                forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
             dbase_mqtt.query(insertQuery, dataArray, (err, res) => {
                 if (err) throw err;
                 console.log(`DATA INSERTED TO DATABASE : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
@@ -193,7 +182,6 @@ module.exports = {
 
         // Handling topic 2 (API)
         if (topic === TOPIC_API) {
-            console.log(`API Requested on topic : ${topic}`);
             payload = (message.toString());
             
             if (payload === "getDataCanti"){
@@ -204,6 +192,43 @@ module.exports = {
                 });
             } 
         }
+
+        // Publish Chart Data
+        dbase_mqtt.query(`SELECT waterlevel,forecast30,forecast300,rms,threshold FROM mqtt_canti 
+                        ORDER BY date DESC, time DESC LIMIT 30;`,function(err,result){
+            if (err) throw (err);
+
+            var DATA_ARRAY_WATERLEVEL = [];
+            var DATA_ARRAY_FORECAST30 = [];
+            var DATA_ARRAY_FORECAST300 = [];
+            var DATA_ARRAY_RMS = [];
+            var DATA_ARRAY_THRESHOLD = [];
+
+            for (i=0 ; i<=result.rowCount-1; i++){
+                DATA_ARRAY_WATERLEVEL.push(result.rows[i].waterlevel);
+                DATA_ARRAY_FORECAST30.push(result.rows[i].forecast30);
+                DATA_ARRAY_FORECAST300.push(result.rows[i].forecast300);
+                DATA_ARRAY_RMS.push(result.rows[i].rms);
+                DATA_ARRAY_THRESHOLD.push(result.rows[i].threshold);
+            } 
+            mqtt_connect.publish('pummamqtt/canti/chart/waterLevel',JSON.stringify(DATA_ARRAY_WATERLEVEL.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+       
+            mqtt_connect.publish('pummamqtt/canti/chart/forecast30',JSON.stringify(DATA_ARRAY_FORECAST30.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            
+            mqtt_connect.publish('pummamqtt/canti/chart/forecast300',JSON.stringify(DATA_ARRAY_FORECAST300.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+           
+            mqtt_connect.publish('pummamqtt/canti/chart/rms',JSON.stringify(DATA_ARRAY_RMS.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            
+            mqtt_connect.publish('pummamqtt/canti/chart/threshold',JSON.stringify(DATA_ARRAY_THRESHOLD.reverse()), 
+                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            
+        });
+
+        
+
     }
 }
-     
