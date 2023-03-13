@@ -50,6 +50,10 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
 const canti_appRoute = require('./src/canti/routes/route_http_canti');
 api.use('/', cors(), canti_appRoute);
 
+// API HANLDING FOR CANTI
+const petengoran_appRoute = require('./src/petengoran/routes/routes_http_petengoran');
+api.use('/', cors(), petengoran_appRoute);
+
 api.use('/', cors(), (req, res) => {
     res.status(404);
     res.send('404 Not Found'); // respond 404 if not available
