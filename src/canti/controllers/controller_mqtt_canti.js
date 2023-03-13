@@ -1,5 +1,6 @@
 const dbase_mqtt = require('../configs/database_canti');
 const mqtt_connect = require('../configs/mqtt_canti')
+const moment = require('moment-timezone');
 const lsq = require('least-squares'); //Least square method to forecasting
 
 require('dotenv').config()
@@ -45,6 +46,9 @@ module.exports = {
                     TS = payload[TS_PATH]
                     DATE = payload[DATE_PATH];
                     WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
+
+                    dateTime = DATE + TS;
+                    console.log(dateTime);
                 }
             }
 
