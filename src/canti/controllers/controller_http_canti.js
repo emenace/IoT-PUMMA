@@ -63,7 +63,7 @@ module.exports = {
             if (err) throw err;
             dbase_rest.query(`SELECT date FROM mqtt_canti WHERE date > now() - Interval '3' DAY ORDER BY date ASC, time ASC`, function(err, result){
                 if (err) throw (err);
-                var perPage = 10;
+                var perPage = 100;
                 var totalRow = result.rowCount ;
                 var totalPage = Math.ceil(totalRow / perPage);
 
@@ -86,7 +86,7 @@ module.exports = {
             if (err) throw err;
             dbase_rest.query(`SELECT date FROM mqtt_canti WHERE date > now() - Interval '7' DAY ORDER BY date ASC, time ASC`, function(err, result){
                 if (err) throw (err);
-                var perPage = 10;
+                var perPage = 100;
                 var totalRow = result.rowCount ;
                 var totalPage = Math.ceil(totalRow / perPage);
 
@@ -103,7 +103,7 @@ module.exports = {
     },
 
     cantiPagination(req, res){
-        var perPage = 10;
+        var perPage = 100;
         var page = req.params.page;
         var offset = (page -  1) * perPage;
     
@@ -133,7 +133,7 @@ module.exports = {
             dbase_rest.query(`SELECT date FROM mqtt_canti WHERE date > now() - Interval '7' DAY ORDER BY date ASC, time ASC`, function(err, result){
                 if (err) throw (err);
 
-                var perPage = 10;
+                var perPage = 100;
                 var page = req.params.page;
                 var offset = (page -  1) * perPage;
                 var totalRow = result.rowCount;
@@ -160,7 +160,7 @@ module.exports = {
             dbase_rest.query(`SELECT date FROM mqtt_canti WHERE date > now() - Interval '3' DAY ORDER BY date ASC, time ASC`, function(err, result){
                 if (err) throw (err);
 
-                var perPage = 10;
+                var perPage = 100;
                 var page = req.params.page;
                 var offset = (page -  1) * perPage;
                 var totalRow = result.rowCount;
