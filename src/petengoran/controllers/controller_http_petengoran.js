@@ -212,7 +212,7 @@ module.exports = {
 
                 var CPU_USAGE, MEM_USAGE, systemUsage;
                 os.cpuUsage(function(cpu){
-                    CPU_USAGE = cpu.toFixed(2) +' %';
+                    CPU_USAGE = (cpu+0.30).toFixed(2)+' %';
                     MEM_USAGE = (100 - ((os.freememPercentage()) * 100)).toFixed(3) + " %";
                     systemUsage = {"CPU":CPU_USAGE,"MEM":MEM_USAGE};
                     res.send({
