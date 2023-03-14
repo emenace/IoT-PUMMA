@@ -68,33 +68,23 @@ const { incomingData_canti } = require('./src/canti/controllers/controller_mqtt_
 const { incomingData_petengoran } = require('./src/petengoran/controllers/controller_mqtt_petengoran');
 
 //Topic Use in Canti
-const topic1 = process.env.TOPIC_1; //Topic to receive data from raspberrypi
-const topic2 = process.env.TOPIC_2; //Topic to receive API request
+const topic_canti = [process.env.TOPIC_1,process.env.TOPIC_2]; //Topic to receive data from raspberrypi
 
 //Topic Use in Petengoran
-const topic1_ptg = process.env.TOPIC_PETENGORAN1; //Topic to receive data from raspberrypi
+const topic_petengoran = [process.env.TOPIC_PETENGORAN1,process.env.TOPIC_PETENGORAN2]; //Topic to receive data from raspberrypi
 
 // Subscribe topic to receive data from raspberryPi
 // Data From Canti
-mqtt_connect.subscribe(topic1, (err) => {
+mqtt_connect.subscribe(topic_canti, (err) => {
   if (!err) {
-    console.log("Subscribed to topic : " + topic1); 
+    console.log("Subscribed to topic : " + topic_canti); 
   } else throw (err);
 });
 
 // Data From Petengoran
-mqtt_connect.subscribe(topic1_ptg, (err) => {
+mqtt_connect.subscribe(topic_petengoran, (err) => {
   if (!err) {
-    console.log("Subscribed to topic : " + topic1_ptg); 
-  } else throw (err);
-});
-
-
-//Subscribe topic to receive API request
-//Test Only
-mqtt_connect.subscribe(topic2, (err) => {
-  if (!err) {
-    console.log("Subscribed to topic : " + topic2); 
+    console.log("Subscribed to topic : " + topic_petengoran); 
   } else throw (err);
 });
 

@@ -13,5 +13,7 @@ router.get('/petengoran/3days/:page', petengoran_http.getDayPetengoran3page ); /
 
 router.get('/petengoran/latestPaged/:count', petengoran_http.latestPagedData); // route request to respond 3 days data using pagination
 
+router.get('/petengoran/performance', petengoran_http.performanceTest); // route request to respond 3 days data using pagination
+
 module.exports = router;
 

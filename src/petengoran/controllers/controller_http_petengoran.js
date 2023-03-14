@@ -1,3 +1,4 @@
+const os = require('os-utils');
 const dbase_rest = require('../configs/database_petengoran');
 require('dotenv').config();
 
@@ -196,6 +197,31 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows
                 })
+                console.log("Data has been send");
+                done();
+            });
+        });
+    },
+
+    performanceTest(req,res){
+       
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            dbase_rest.query("SELECT * FROM mqtt_petengoran ORDER BY datetime ASC LIMIT 100", function(err, result){
+                if (err) throw (err);
+
+                var CPU_USAGE, MEM_USAGE, systemUsage;
+                os.cpuUsage(function(cpu){
+                    CPU_USAGE = cpu.toFixed(2) +' %';
+                    MEM_USAGE = (100 - ((os.freememPercentage()) * 100)).toFixed(3) + " %";
+                    systemUsage = {"CPU":CPU_USAGE,"MEM":MEM_USAGE};
+                    res.send({
+                        system:systemUsage,
+                        count:result.rowCount,
+                        result: result.rows.reverse()
+                    })
+                });
+               
                 console.log("Data has been send");
                 done();
             });
