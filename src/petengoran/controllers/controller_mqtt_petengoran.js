@@ -161,6 +161,25 @@ module.exports = {
                     dbase_mqtt.query(insertQuery, dataArray, (err, res) => {
                         if (err) throw err;
                         console.log(`DB PETENGORAN : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
+                        
+                        //publish data to new topic for performance testing
+                        var CPU_USAGE, MEM_USAGE;
+                        dbase_mqtt.query("SELECT * FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 100", function(err, result){
+                            if (err) throw (err);
+
+                            os.cpuUsage(function(cpu){
+                                CPU_USAGE = cpu.toFixed(2) +' %';
+                                MEM_USAGE = (100 - ((os.freememPercentage()) * 100)).toFixed(3) + " %";
+                                console.log( 'CPU Usage : ' + cpu.toFixed(2) +' %' );
+                                console.log( 'MEM Usage : ' + (100 - ((os.freememPercentage()).toFixed(3) * 100)) + " %" );
+            
+                                systemUsage = {"CPU":CPU_USAGE,"MEM":MEM_USAGE};
+
+                                mqtt_data={result: result.rows.reverse(),system:systemUsage,count:result.rowCount}
+                                mqtt_connect.publish(process.env.TOPIC_PETENGORAN2,JSON.stringify(mqtt_data), {qos:2, retain:true});
+                            });
+                            console.log("Data published");
+                        });
                     });       
                 });
             }
@@ -168,22 +187,7 @@ module.exports = {
         if (topic === process.env.TOPIC_PETENGORAN2){
             payload = (message.toString());
             if (payload === "getDataPetengoran"){
-                var CPU_USAGE, MEM_USAGE;
                 
-                dbase_mqtt.query("SELECT * FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 100", function(err, result){
-                    if (err) throw (err);
-                    mqtt_connect.publish(process.env.TOPIC_PETENGORAN2,JSON.stringify(result.rows.reverse()), {qos:2, retain:true});
-                    os.cpuUsage(function(cpu){
-                        CPU_USAGE = cpu.toFixed(2) +' %';
-                        MEM_USAGE = (100 - ((os.freememPercentage()) * 100)).toFixed(3) + " %";
-                        console.log( 'CPU Usage : ' + cpu.toFixed(2) +' %' );
-                        console.log( 'MEM Usage : ' + (100 - ((os.freememPercentage()).toFixed(3) * 100)) + " %" );
-    
-                        systemUsage = {"CPU":CPU_USAGE,"MEM":MEM_USAGE};
-                        mqtt_connect.publish(process.env.TOPIC_PETENGORAN2,JSON.stringify(systemUsage), {qos:2, retain:true});
-                    });
-                    console.log("Data published");
-                });
             } 
         }
     }
