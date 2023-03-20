@@ -1,13 +1,34 @@
-const moment = require('moment-timezone');
+// Dependencies
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const express = require('express');
 
-date = "2023-03-13";
-time = "22:38:19";
+const app = express();
 
-dateTime = date + "T" +time;
-console.log(dateTime);
+// Certificate
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/cert.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/chain.pem', 'utf8');
 
-momentDate = moment(dateTime).format('MMMM Do YYYY, h:mm:ss a');
-console.log(momentDate);
+const credentials = {
+    key: privateKey,
+    cert: certificate,
+    ca: ca
+};
 
-parseDate = Date.parse(dateTime);
-console.log(parseDate);
+app.use((req, res) => {
+    res.send('Hello there !');
+});
+
+// Starting both http & https servers
+const httpServer = http.createServer(app);
+const httpsServer = https.createServer(credentials, app);
+
+httpServer.listen(8082, () => {
+    console.log('HTTP Server running on port 80');
+});
+
+httpsServer.listen(4443, () => {
+    console.log('HTTPS Server running on port 443');
+});

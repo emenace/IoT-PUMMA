@@ -12,7 +12,7 @@ module.exports = {
     getDataPetengoran(req,res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query("SELECT * FROM mqtt_petengoran ORDER BY datetime ASC LIMIT 100", function(err, result){
+            dbase_rest.query("SELECT * FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 100", function(err, result){
                 if (err) throw (err);
                 res.send({
                     count:result.rowCount,
@@ -29,7 +29,7 @@ module.exports = {
         let count = parseInt(req.params.count);
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_petengoran ORDER BY datetime ASC LIMIT ${count}`, function(err, result){
+            dbase_rest.query(`SELECT * FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT ${count}`, function(err, result){
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
@@ -45,7 +45,7 @@ module.exports = {
     getDayPetengoran1(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_petengoran WHERE date > now() - Interval '1' DAY ORDER BY datetime ASC`, function(err, result){
+            dbase_rest.query(`SELECT * FROM mqtt_petengoran WHERE date > now() - Interval '1' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
@@ -61,7 +61,7 @@ module.exports = {
     getDayPetengoran3(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '3' DAY ORDER BY datetime ASC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 var perPage = 100;
                 var totalRow = result.rowCount ;
@@ -84,7 +84,7 @@ module.exports = {
     getDayPetengoran7(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '7' DAY ORDER BY datetime ASC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 var perPage = 100;
                 var totalRow = result.rowCount ;
@@ -130,7 +130,7 @@ module.exports = {
     getDayPetengoran7page(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '7' DAY ORDER BY datetime ASC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
 
                 var perPage = 100;
@@ -157,7 +157,7 @@ module.exports = {
     getDayPetengoran3page(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '3' DAY ORDER BY datetime ASC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date > now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
 
                 var perPage = 100;
@@ -167,7 +167,7 @@ module.exports = {
                 var totalPage = Math.ceil(totalRow / perPage);
                 var counts = result.rowCount;
 
-                dbase_rest.query(`SELECT *  FROM mqtt_petengoran WHERE date > now() - Interval '3' DAY ORDER BY datetime ASC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                dbase_rest.query(`SELECT *  FROM mqtt_petengoran WHERE date > now() - Interval '3' DAY ORDER BY date DESC, time DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
                     res.json({
                         count:counts,
                         totalPage:totalPage,
@@ -185,8 +185,8 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             dbase_rest.query(`Select * from mqtt_petengoran 
-            where id in (select id from mqtt_petengoran order by datetime desc limit ${req.params.count})
-            order by datetime desc limit ${req.query.limit} offset ${req.query.offset}`, function(err, result){
+            where id in (select id from mqtt_petengoran order by date DESC, time DESC limit ${req.params.count})
+            order by date DESC, time DESC limit ${req.query.limit} offset ${req.query.offset}`, function(err, result){
                 console.log(req.params.count);
                 console.log(req.query.limit);
                 console.log(req.query.offset);
