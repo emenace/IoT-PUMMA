@@ -57,15 +57,36 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
   `, function(err, result){
     console.log("Database Petengoran Connected");
   });
-            
+       
+  const dbase_panjang = require('./src/panjang/configs/database_panjang'); 
+  dbase_panjang.query(`CREATE TABLE IF NOT EXISTS mqtt_panjang (
+    id BIGINT NOT NULL PRIMARY KEY,
+    datetime TIMESTAMP NOT NULL,
+    time TIME NOT NULL, 
+    date DATE NOT NULL, 
+    waterLevel FLOAT, 
+    voltage FLOAT, 
+    temperature FLOAT,
+    forecast30 FLOAT, 
+    forecast300 FLOAT,
+    rms FLOAT,
+    threshold FLOAT)
+    `, function(err, result){
+      console.log("Database Petengoran Connected");
+    });
+       
 
 // API HANLDING FOR CANTI
 const canti_appRoute = require('./src/canti/routes/route_http_canti');
 api.use('/', cors(), canti_appRoute);
 
-// API HANLDING FOR CANTI
+// API HANLDING FOR PETENGORAN
 const petengoran_appRoute = require('./src/petengoran/routes/routes_http_petengoran');
 api.use('/', cors(), petengoran_appRoute);
+
+// API HANLDING FOR PANJANG
+const panjang_appRoute = require('./src/panjang/routes/routes_http_panjang');
+api.use('/', cors(), panjang_appRoute);
 
 api.use('/', cors(), (req, res) => {
     res.status(404);
@@ -88,6 +109,7 @@ httpsServer.listen(4443, () => {
 const mqtt_connect = require('./src/global_config/mqtt_config')
 const { incomingData_canti } = require('./src/canti/controllers/controller_mqtt_canti');
 const { incomingData_petengoran } = require('./src/petengoran/controllers/controller_mqtt_petengoran');
+const { incomingData_panjang } = require('./src/panjang/controllers/controller_mqtt_panjang');
 
 //Topic Use in Canti
 const topic1 = process.env.TOPIC_1; //Topic to receive data from raspberrypi
@@ -95,6 +117,9 @@ const topic2 = process.env.TOPIC_2; //Topic to receive API request
 
 //Topic Use in Petengoran
 const topic1_ptg = process.env.TOPIC_PETENGORAN1; //Topic to receive data from raspberrypi
+
+//Topic Use in Panjang
+const topic1_pjg = process.env.TOPIC_PANJANG1; //Topic to receive data from raspberrypi
 
 // Subscribe topic to receive data from raspberryPi
 // Data From Canti
@@ -111,6 +136,12 @@ mqtt_connect.subscribe(topic1_ptg, (err) => {
   } else throw (err);
 });
 
+// Data From Panjang
+mqtt_connect.subscribe(topic1_pjg, (err) => {
+  if (!err) {
+    console.log("Subscribed to topic : " + topic1_pjg); 
+  } else throw (err);
+});
 
 //Subscribe topic to receive API request
 //Test Only
@@ -123,7 +154,7 @@ mqtt_connect.subscribe(topic2, (err) => {
 // Handle message from mqtt
 mqtt_connect.on("message", incomingData_canti);
 mqtt_connect.on("message", incomingData_petengoran);
-
+mqtt_connect.on("message", incomingData_panjang);
 
 
 
