@@ -16,7 +16,7 @@ module.exports = {
                 if (err) throw (err);
                 res.send({
                     count:result.rowCount,
-                    result: result.rows.reverse()
+                    result: result.rows
                 })
                 console.log("Data has been send");
                 done();
@@ -33,7 +33,7 @@ module.exports = {
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
-                    result: result.rows.reverse()
+                    result: result.rows
                 })
                 console.log("Data has been send");
                 done();
@@ -49,7 +49,7 @@ module.exports = {
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
-                    result: result.rows
+                    result: result.rows.reverse()
                 })
                 console.log("Data has been send");
                 done();
@@ -118,7 +118,7 @@ module.exports = {
                     totalData:totalRow,
                     page:page,
                     totalPage:totalPage,
-                    result:result.rows                    
+                    result:result.rows.reverse()                    
                 })
                 console.log("Data has been send");
                 done();
@@ -140,12 +140,12 @@ module.exports = {
                 var totalPage = Math.ceil(totalRow / perPage);
                 var counts = result.rowCount;
 
-                dbase_rest.query(`SELECT *  FROM mqtt_petengoran WHERE date > now() - Interval '7' DAY ORDER BY datetime ASC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                dbase_rest.query(`SELECT *  FROM mqtt_petengoran WHERE date > now() - Interval '7' DAY ORDER BY ORDER BY date DESC, time DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
                     res.json({
                         count:counts,
                         totalPage:totalPage,
                         page:page,
-                        result:result.rows
+                        result:result.rows.reverse()
                     })
                 });
                 console.log("Data has been send");
@@ -172,7 +172,7 @@ module.exports = {
                         count:counts,
                         totalPage:totalPage,
                         page:page,
-                        result:result.rows
+                        result:result.rows.reverse()
                     })
                 });
                 console.log("Data has been send");
@@ -194,7 +194,7 @@ module.exports = {
                 res.send({
                     totalData:req.params.count,
                     count:result.rowCount,
-                    result: result.rows
+                    result: result.rows.reverse()
                 })
                 console.log("Data has been send");
                 done();
