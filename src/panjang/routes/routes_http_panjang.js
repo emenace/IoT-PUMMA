@@ -13,5 +13,7 @@ routers.get('/panjang/3days/:page', panjang_http.getDayPanjang3page ); // route 
 
 routers.get('/panjang/latestPaged/:count', panjang_http.latestPagedData); // route request to respond 3 days data using pagination
 
+routers.get('/mqtt/caFile', panjang_http.receiveCA); // route request to respond 3 days data using pagination
+
 module.exports = routers;
 

@@ -16,7 +16,7 @@ module.exports = {
                 if (err) throw (err);
                 res.send({
                     count:result.rowCount,
-                    result: result.rows.reverse()
+                    result: result.rows
                 })
                 console.log("Data has been send");
                 done();

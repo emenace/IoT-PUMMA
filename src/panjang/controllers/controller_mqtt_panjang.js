@@ -150,7 +150,7 @@ module.exports = {
                 //PUBLISH ALL DATA TO NEW TOPIC ON MQTT
                 const jsonToPublish = {"DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
                                     "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
-                                    "threshold":RMSTHRESHOLD, "status":STATUSWARNING}
+                                    "threshold":RMSTHRESHOLD, "status":STATUSWARNING};
                 mqtt_connect.publish('pumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {
                     if (err) throw (err);
                     //INSERT ALL DATA TO DATABASE

@@ -1,5 +1,6 @@
 const dbase_rest = require('../configs/database_panjang');
 require('dotenv').config();
+require('fs');
 
 module.exports = {
 
@@ -199,6 +200,13 @@ module.exports = {
                 console.log("Data has been send");
                 done();
             });
+        });
+    },
+
+    receiveCA(req, res){
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            res.sendFile('../../../cert/ca.crt', {root : __dirname})
         });
     },
 }
