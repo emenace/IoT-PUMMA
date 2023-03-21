@@ -151,6 +151,12 @@ module.exports = {
                 const jsonToPublish = {"DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
                                     "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
                                     "threshold":RMSTHRESHOLD, "status":STATUSWARNING};
+
+                //SEND UTC TIME TO JRC
+                var isoDateString = new Date(DATETIME).toISOString();
+                const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
+                mqtt_connect.publish('pummaUTEWS/panjang', JSON.stringify(jsonToJRC), {qos:0, retain:false});
+                
                 mqtt_connect.publish('pumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {
                     if (err) throw (err);
                     //INSERT ALL DATA TO DATABASE
