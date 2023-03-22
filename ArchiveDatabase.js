@@ -126,3 +126,9 @@ async function initialize_db(){//Function to initializing database. check and cr
         });
     });
 }
+
+process.on('SIGTERM', () => {
+    console.info('SIGTERM signal received.');
+    console.log('Closing Archiving program.');
+    process.exit(0);
+});
