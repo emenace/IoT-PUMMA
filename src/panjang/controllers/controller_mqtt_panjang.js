@@ -166,6 +166,14 @@ module.exports = {
                     dbase_mqtt.query(insertQuery, dataArray, (err, res) => {
                         if (err) throw err;
                         console.log(`DB PANJANG : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
+                        
+                        //publish data to new topic for 100 data update
+                        dbase_mqtt.query("SELECT * FROM mqtt_panjang ORDER BY date DESC, time DESC LIMIT 100", function(err, result){
+                            if (err) throw (err);
+                                mqtt_data={result: result.rows.reverse()}
+                                mqtt_connect.publish('pumma/panjang/update',JSON.stringify(mqtt_data), {qos:0, retain:true});                           
+                            console.log("Data published From Panjang");
+                        });
                     });       
                 });
             }
