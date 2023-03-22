@@ -6,11 +6,11 @@ const lsq = require('least-squares'); //Least square method to forecasting
 require('dotenv').config()
 
 // PATH name check on .env
-TS_PATH = process.env.PAYLOAD_PETENGORAN_TS // Now using TSjsn;
-DATE_PATH = process.env.PAYLOAD_PETENGORAN_DATE //Now using Datejsn;
-WATERLEVEL_PATH = process.env.PAYLOAD_PETENGORAN_WATERLEVEL //Now using tinggijsn; //change path based on data from raspberrypi
-TEMP_PATH = process.env.PAYLOAD_PETENGORAN_TEMP
-VOLTAGE_PATH = process.env.PAYLOAD_PETENGORAN_VOLTAGE
+TS_PATH = process.env.PAYLOAD_PANJANG_TS // Now using TSjsn;
+DATE_PATH = process.env.PAYLOAD_PANJANG_DATE //Now using Datejsn;
+WATERLEVEL_PATH = process.env.PAYLOAD_PANJANG_WATERLEVEL //Now using tinggijsn; //change path based on data from raspberrypi
+TEMP_PATH = process.env.PAYLOAD_PANJANG_TEMP
+VOLTAGE_PATH = process.env.PAYLOAD_PANJANG_VOLTAGE
 
 var { DATA_ID, TS, DATE, WATERLEVEL, TEMP, VOLTAGE,FORECAST30, FORECAST300, DATETIME } = [];
 
@@ -29,7 +29,7 @@ module.exports = {
     async incomingData_panjang(topic,message){
 
         // Handling data from topic 1 (data from raspberrypi)
-        if (topic === process.env.TOPIC_PETENGORAN1){
+        if (topic === process.env.TOPIC_PANJANG1){
             
             // Save subscribed message to payload variable
             const payload = JSON.parse(message.toString());
