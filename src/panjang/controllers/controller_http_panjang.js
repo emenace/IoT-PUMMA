@@ -203,10 +203,30 @@ module.exports = {
         });
     },
 
-    receiveCA(req, res){
+    // Get data by Hour
+    dataByHour(req, res){
+        time = req.params.time;
+        timer = req.query.timer;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            res.sendFile('../../../cert/ca.crt', {root : __dirname})
+            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
+                dbase_rest.query(`SELECT datetime, waterlevel FROM mqtt_panjang WHERE datetime > now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                    if (err) console.log(err.message);
+                    res.json({
+                        count:result.rowCount,
+                        result: result.rows
+                    })
+                    console.log("Data has been send");
+                    done();
+                });
+            }else {
+                res.status(404);
+                res.json({
+                    message:"Invalid Timer. Use second, minute, hour, day",
+                })
+                done();
+            };
+            
         });
     },
 }
