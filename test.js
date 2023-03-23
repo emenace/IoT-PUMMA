@@ -1,3 +1,8 @@
-date = "2023-03-16T11:55:21";
-var isoDateString = new Date(date).toISOString();
-console.log(isoDateString);
+const dbase_mqtt = require('./src/panjang/configs/database_panjang');
+
+async function main(){
+    var getLastTempVolt = await dbase_mqtt.query(`SELECT waterlevel FROM mqtt_panjang ORDER BY datetime DESC LIMIT 29;`);
+    console.log(getLastTempVolt.rows);
+}
+
+main();
