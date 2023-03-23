@@ -1,6 +1,7 @@
 const dbase_mqtt = require('../configs/database_panjang');
 const mqtt_connect = require('../../global_config/mqtt_config');
 const moment = require('moment-timezone');
+const fs = require('fs');
 const lsq = require('least-squares'); //Least square method to forecasting
 
 require('dotenv').config()
@@ -177,6 +178,26 @@ module.exports = {
                     });       
                 });
             }
+        }
+
+        if (topic === process.env.TOPIC_PANJANG_IMAGE){
+            const imagePayload = message.toString();
+            fs.writeFile("src/panjang/image/panjang_b64string.txt", imagePayload, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+                console.log("String IMAGE [Panjang] file was saved!");
+            }); 
+
+            let image = `data:image/jpeg;base64,${message}`
+            var data = image.replace(/^data:image\/\w+;base64,/, '');
+
+            fs.writeFile("src/panjang/image/panjang.png", data, {encoding: 'base64'}, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+                console.log("IMAGE [Panjang] file was saved!");
+            }); 
         }
     }
 }
