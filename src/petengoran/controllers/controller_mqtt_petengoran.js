@@ -1,5 +1,6 @@
 const dbase_mqtt = require('../configs/database_petengoran');
 const mqtt_connect = require('../../global_config/mqtt_config');
+const fs = require('fs');
 const moment = require('moment-timezone');
 const lsq = require('least-squares'); //Least square method to forecasting
 
@@ -171,7 +172,7 @@ module.exports = {
                             if (err) throw (err);
                                 mqtt_data={result: result.rows.reverse()}
                                 mqtt_connect.publish('pumma/petengoran/update',JSON.stringify(mqtt_data), {qos:0, retain:true});                           
-                            console.log("Data published From Petengoran");
+                            console.log("DATA [Petengoran] sent to MQTT");
                         });
 
                     });
@@ -179,6 +180,26 @@ module.exports = {
                     
                 });
             }
+        }
+
+        if (topic === process.env.TOPIC_PETENGORAN_IMAGE){
+            const imagePayload = message.toString();
+            fs.writeFile("src/petengoran/image/petengoran_b64string.txt", imagePayload, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+                console.log("String IMAGE [Petengoran] file was saved!");
+            }); 
+
+            let image = `data:image/jpeg;base64,${message}`
+            var data = image.replace(/^data:image\/\w+;base64,/, '');
+
+            fs.writeFile("src/petengoran/image/petengoran.png", data, {encoding: 'base64'}, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+                console.log("IMAGE [Petengoran] file was saved!");
+            }); 
         }
     }
 }

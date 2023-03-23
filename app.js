@@ -111,46 +111,23 @@ const { incomingData_canti } = require('./src/canti/controllers/controller_mqtt_
 const { incomingData_petengoran } = require('./src/petengoran/controllers/controller_mqtt_petengoran');
 const { incomingData_panjang } = require('./src/panjang/controllers/controller_mqtt_panjang');
 
-//Topic Use in Canti
-const topic1 = process.env.TOPIC_1; //Topic to receive data from raspberrypi
-const topic2 = process.env.TOPIC_2; //Topic to receive API request
-
-//Topic Use in Petengoran
-const topic1_ptg = process.env.TOPIC_PETENGORAN1; //Topic to receive data from raspberrypi
-const topic_ptg_image = process.env.TOPIC_PETENGORAN_IMAGE;
-
-//Topic Use in Panjang
-const topic1_pjg = process.env.TOPIC_PANJANG1; //Topic to receive data from raspberrypi
-const topic_pjg_image = process.env.TOPIC_PANJANG_IMAGE;
-
+// List of all subscribed topics
+var topic = [
+  process.env.TOPIC_1, 
+  process.env.TOPIC_2, 
+  process.env.TOPIC_PETENGORAN1,
+  process.env.TOPIC_PETENGORAN_IMAGE,
+  process.env.TOPIC_PANJANG1,
+  process.env.TOPIC_PANJANG_IMAGE,
+ ];
 
 // Subscribe topic to receive data from raspberryPi
 // Data From Canti
-mqtt_connect.subscribe(topic1, (err) => {
+mqtt_connect.subscribe(topic, (err) => {
   if (!err) {
-    console.log("Subscribed to topic : " + topic1); 
-  } else throw (err);
-});
-
-// Data From Petengoran
-mqtt_connect.subscribe(topic1_ptg, (err) => {
-  if (!err) {
-    console.log("Subscribed to topic : " + topic1_ptg); 
-  } else throw (err);
-});
-
-// Data From Panjang
-mqtt_connect.subscribe(topic1_pjg, (err) => {
-  if (!err) {
-    console.log("Subscribed to topic : " + topic1_pjg); 
-  } else throw (err);
-});
-
-//Subscribe topic to receive API request
-//Test Only
-mqtt_connect.subscribe(topic2, (err) => {
-  if (!err) {
-    console.log("Subscribed to topic : " + topic2); 
+    topic.forEach(function(value){
+      console.log("Subscribed to topic : " + value); 
+    });
   } else throw (err);
 });
 
