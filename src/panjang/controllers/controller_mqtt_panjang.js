@@ -146,7 +146,7 @@ module.exports = {
                         dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
                         insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang(id, datetime, time, date, waterlevel, voltage, temperature, 
                             forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,dataArray);
-                            console.log(`DB PANJANG : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
+                            console.log(`[U_TEWS Panjang] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
 
                         mqtt_connect.publish('pumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
 
@@ -154,7 +154,7 @@ module.exports = {
                         var mqtt_data={result: getLastUpdate.rows.reverse()}
                         mqtt_connect.publish('pumma/panjang/update',JSON.stringify(mqtt_data), {qos:0, retain:true}, (err) => {
                             if (err) throw (err);
-                            console.log("Data published From Panjang");
+                            console.log("[U_TEWS Panjang 003] sent");
                         });    
                     }
                 }
@@ -167,7 +167,7 @@ module.exports = {
                 if(err) {
                     return console.log(err);
                 }
-                console.log("String IMAGE [Panjang] file was saved!");
+                //console.log("IMAGE [U_TEWS Panjang] file was saved!");
             }); 
 
             let image = `data:image/jpeg;base64,${message}`
@@ -177,7 +177,7 @@ module.exports = {
                 if(err) {
                     return console.log(err);
                 }
-                console.log("IMAGE [Panjang] file was saved!");
+                console.log("[U_TEWS Panjang 003] Image file was saved!");
             }); 
         }
     }
