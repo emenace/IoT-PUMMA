@@ -13,7 +13,7 @@ module.exports = {
     getDataPanjang(req,res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query("SELECT * FROM mqtt_panjang ORDER BY date DESC, time DESC LIMIT 100", function(err, result){
+            dbase_rest.query("SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100", function(err, result){
                 if (err) throw (err);
                 res.send({
                     count:result.rowCount,
@@ -30,7 +30,7 @@ module.exports = {
         let count = parseInt(req.params.count);
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_panjang ORDER BY date DESC, time DESC LIMIT ${count}`, function(err, result){
+            dbase_rest.query(`SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT ${count}`, function(err, result){
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
@@ -46,7 +46,7 @@ module.exports = {
     getDayPanjang1(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_panjang WHERE date > now() - Interval '1' DAY ORDER BY date DESC, time DESC`, function(err, result){
+            dbase_rest.query(`SELECT * FROM mqtt_panjang WHERE datetime >= now() - Interval '1' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
@@ -62,7 +62,7 @@ module.exports = {
     getDayPanjang3(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE date > now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 var perPage = 100;
                 var totalRow = result.rowCount ;
@@ -85,7 +85,7 @@ module.exports = {
     getDayPanjang7(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE date > now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 var perPage = 100;
                 var totalRow = result.rowCount ;
@@ -131,7 +131,7 @@ module.exports = {
     getDayPanjang7page(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE date > now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC`, function(err, result){
                 if (err) throw (err);
 
                 var perPage = 100;
@@ -141,7 +141,7 @@ module.exports = {
                 var totalPage = Math.ceil(totalRow / perPage);
                 var counts = result.rowCount;
 
-                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE date > now() - Interval '7' DAY ORDER BY ORDER BY date DESC, time DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
                     res.json({
                         count:counts,
                         totalPage:totalPage,
@@ -158,7 +158,7 @@ module.exports = {
     getDayPanjang3page(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE date > now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC`, function(err, result){
                 if (err) throw (err);
 
                 var perPage = 100;
@@ -168,7 +168,7 @@ module.exports = {
                 var totalPage = Math.ceil(totalRow / perPage);
                 var counts = result.rowCount;
 
-                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE date > now() - Interval '3' DAY ORDER BY date DESC, time DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
                     res.json({
                         count:counts,
                         totalPage:totalPage,
@@ -186,8 +186,8 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             dbase_rest.query(`Select * from mqtt_panjang 
-            where id in (select id from mqtt_panjang order by date DESC, time DESC limit ${req.params.count})
-            order by date DESC, time DESC limit ${req.query.limit} offset ${req.query.offset}`, function(err, result){
+            where id in (select id from mqtt_panjang order by datetime DESC limit ${req.params.count})
+            order by datetime DESC limit ${req.query.limit} offset ${req.query.offset}`, function(err, result){
                 console.log(req.params.count);
                 console.log(req.query.limit);
                 console.log(req.query.offset);
@@ -210,7 +210,7 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime, waterlevel FROM mqtt_panjang WHERE datetime > now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                dbase_rest.query(`SELECT datetime, waterlevel FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) console.log(err.message);
                     res.json({
                         count:result.rowCount,
