@@ -227,4 +227,9 @@ module.exports = {
             
         });
     },
+
+    sendImage(req, res){
+        res.status(200),
+        res.sendfile("src/petengoran/image/petengoran.png")
+    },
 }

@@ -229,4 +229,9 @@ module.exports = {
             
         });
     },
+
+    sendImage(req, res){
+        res.status(200),
+        res.sendfile("src/panjang/image/panjang.png")
+    },
 }

@@ -20,7 +20,8 @@ routers.get('/panjang/latestPaged/:count', panjang_http.latestPagedData); // rou
 //Record of data by time
 routers.get('/panjang/time/:time', panjang_http.dataByHour); // route request to respond last day data
 
-
+// Send image
+routers.get('/panjang/image/', panjang_http.sendImage)
 
 module.exports = routers;
 
