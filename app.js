@@ -117,9 +117,12 @@ const topic2 = process.env.TOPIC_2; //Topic to receive API request
 
 //Topic Use in Petengoran
 const topic1_ptg = process.env.TOPIC_PETENGORAN1; //Topic to receive data from raspberrypi
+const topic_ptg_image = process.env.TOPIC_PETENGORAN_IMAGE;
 
 //Topic Use in Panjang
 const topic1_pjg = process.env.TOPIC_PANJANG1; //Topic to receive data from raspberrypi
+const topic_pjg_image = process.env.TOPIC_PANJANG_IMAGE;
+
 
 // Subscribe topic to receive data from raspberryPi
 // Data From Canti
