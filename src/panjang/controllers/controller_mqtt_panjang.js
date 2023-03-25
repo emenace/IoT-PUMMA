@@ -146,7 +146,7 @@ module.exports = {
                         dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
                         insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang(id, datetime, time, date, waterlevel, voltage, temperature, 
                             forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,dataArray);
-                            console.log(`[U_TEWS Panjang] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
+                            console.log(`[U_TEWS Panjang 003] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
 
                         mqtt_connect.publish('pumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
 
@@ -154,7 +154,7 @@ module.exports = {
                         var mqtt_data={result: getLastUpdate.rows.reverse()}
                         mqtt_connect.publish('pumma/panjang/update',JSON.stringify(mqtt_data), {qos:0, retain:true}, (err) => {
                             if (err) throw (err);
-                            console.log("[U_TEWS Panjang 003] sent");
+                            console.log("[U_TEWS Panjang 003] Updated "+ Date(Date.now()));
                         });    
                     }
                 }

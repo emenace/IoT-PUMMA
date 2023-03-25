@@ -146,7 +146,7 @@ module.exports = {
                         dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
                         insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
                             forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,dataArray);
-                            console.log(`DB [U_TEWS Petengoran] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
+                            console.log(`[U_TEWS Petengoran 001] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
 
                         mqtt_connect.publish('pumma/petengoran',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
 
@@ -154,7 +154,7 @@ module.exports = {
                         var mqtt_data={result: getLastUpdate.rows.reverse()}
                         mqtt_connect.publish('pumma/petengoran/update',JSON.stringify(mqtt_data), {qos:0, retain:true}, (err) => {
                             if (err) throw (err);
-                            console.log("UPDATE [U_TEWS Petengoran] sent");
+                            console.log("[U_TEWS Petengoran 001] Updated " + Date(Date.now()));
                         });    
                     }
                 }
@@ -177,7 +177,7 @@ module.exports = {
                 if(err) {
                     return console.log(err);
                 }
-                console.log("IMAGE [U_TEWS Petengoran] file was saved!");
+                console.log("[U_TEWS Petengoran 001] file was saved!");
             }); 
         }
     }
