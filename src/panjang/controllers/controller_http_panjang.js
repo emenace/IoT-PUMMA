@@ -243,6 +243,11 @@ module.exports = {
                     res.status(404);
                     res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
                 };
+                if (result.rowCount===0) {
+                    res.status(404);
+                    res.send("Error date format. use YYYY-M-D Example : 2023-3-28")
+                    res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
+                };
                 res.json({
                     count:result.rowCount,
                     result: result.rows
