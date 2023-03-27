@@ -51,112 +51,114 @@ module.exports = {
 
                     DATETIME = DATE +'T'+ TS;
                     DATA_ID = Date.parse(DATETIME);
-                
-                    // Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
-                    // If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
                     
-                    // Check data is available or not in database   
-                    var checkZero = await dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_petengoran LIMIT 1) THEN 1 ELSE 0 END");
-                    if (checkZero.rows[0].case === 0) {
-                        console.log("Table is empty. no value about voltage and temp. use 0 instead");
-                        // If table is empty, value of variables set to 0.
-                        TEMP = 0; VOLTAGE = 0;
+                    //Data Duplication Check
+                    var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_petengoran where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
+                    if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
+
+                        // Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
+                        // If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
+                        // Check data is available or not in database   
+                        var checkZero = await dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_petengoran LIMIT 1) THEN 1 ELSE 0 END");
+                        if (checkZero.rows[0].case === 0) {
+                            console.log("Table is empty. no value about voltage and temp. use 0 instead");
+                            // If table is empty, value of variables set to 0.
+                            TEMP = 0; VOLTAGE = 0;
+                        } else {
+                            if (payload.hasOwnProperty(TEMP_PATH)) {
+                                TEMP = parseFloat(payload[TEMP_PATH]);
+                            } else {
+                                getLastTemp = await dbase_mqtt.query("SELECT temperature, voltage FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 1");
+                                TEMP = (getLastTemp.rows[0].temperature); //use latest data from database if temperature not available
+                            }
+
+                            // Checking payload has voltage or not
+                            if (payload.hasOwnProperty(VOLTAGE_PATH)) {
+                                VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
+                            } else {
+                                getLastVolt = await dbase_mqtt.query("SELECT voltage, voltage FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 1");
+                                VOLTAGE = (getLastVolt.rows[0].voltage); //use latest data from database if voltage not available
+                            }
+
+                            // Fetch 30 Data From Database
+                            var get30DB = await dbase_mqtt.query(`SELECT waterlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 29;`);
+                            
+                            // Temporary Variable
+                            var timeSeries = []; var timeWater = [];
+                            var rmsSquare = 0;   var rmsMean = 0;
+
+                            // Insert latest data to Array. positition 30 on timeseries.
+                            timeSeries.push(30);
+                            timeWater.push(WATERLEVEL);
+
+                            // Insert data 1 - 29 from database to Array.
+                            for (i=0 ; i<=get30DB.rowCount-1; i++){
+                                timeSeries.push(i);
+                                timeWater.push(get30DB.rows[i].waterlevel);
+                                rmsSquare += Math.pow(get30DB.rows[i].waterlevel, 2);
+                            }    
+                            
+                            //Reverse position because DB is DESCENDING
+                            timeSeries.reverse(); 
+                            timeWater.reverse();//reverse descending data from db and mqtt
+                            
+                            // Do Forecast 30
+                            var forecast = lsq(timeSeries, timeWater);
+                            FORECAST30 = parseFloat(forecast(31).toFixed(2));
+        
+                            // Calculate RMS
+                            rmsMean = (rmsSquare / (get30DB.rowCount));
+                            RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
+                            RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
+
+                            // Fetch 300 Data From Database
+                            var get300DB = await dbase_mqtt.query(`SELECT waterlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 299;`);
+                            
+                            // Temp Variable
+                            var timeSeries_fc300 = []; var timeWater_fc300 = [];
+
+                            // Insert latest data to Array. positition 30 on timeseries.
+                            timeSeries_fc300.push(300);
+                            timeWater_fc300.push(WATERLEVEL);
+                            
+                            //parse all data from db to variable
+                            for (i=0 ; i<=get300DB.rowCount-1; i++){
+                                timeSeries_fc300.push(i);
+                                timeWater_fc300.push(get300DB.rows[i].waterlevel);
+                            }
+                            timeSeries_fc300.reverse(); 
+                            timeWater_fc300.reverse();//reverse descending data from db and mqtt
+
+                            var forecast = lsq(timeSeries_fc300, timeWater_fc300);
+                            FORECAST300 = parseFloat(forecast(301).toFixed(2));
+
+                            // Threshold logic
+                            if (WATERLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
+
+
+                            //PUBLISH ALL DATA TO NEW TOPIC ON MQTT
+                            const jsonToPublish = {
+                                "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
+                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
+                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING
+                            };
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
+                                forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,dataArray);
+                                console.log(`[U_TEWS Petengoran 003] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
+                            
+                            var isoDateString = new Date(DATETIME).toISOString();
+                            const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
+                            
+                            //SEND UTC TIME TO JRC                       
+                            mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), {qos:0, retain:false});    
+                            mqtt_connect.publish('pumma/petengoran',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
+                            console.log("[U_TEWS Petengoran 001] Updated "+ Date(Date.now()));
+                            
+                        }
                     } else {
-                        if (payload.hasOwnProperty(TEMP_PATH)) {
-                            TEMP = parseFloat(payload[TEMP_PATH]);
-                        } else {
-                            getLastTemp = await dbase_mqtt.query("SELECT temperature, voltage FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 1");
-                            TEMP = (getLastTemp.rows[0].temperature); //use latest data from database if temperature not available
-                        }
-
-                        // Checking payload has voltage or not
-                        if (payload.hasOwnProperty(VOLTAGE_PATH)) {
-                            VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
-                        } else {
-                            getLastVolt = await dbase_mqtt.query("SELECT voltage, voltage FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 1");
-                            VOLTAGE = (getLastVolt.rows[0].voltage); //use latest data from database if voltage not available
-                        }
-
-                        // Fetch 30 Data From Database
-                        var get30DB = await dbase_mqtt.query(`SELECT waterlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 29;`);
-                        
-                        // Temporary Variable
-                        var timeSeries = []; var timeWater = [];
-                        var rmsSquare = 0;   var rmsMean = 0;
-
-                        // Insert latest data to Array. positition 30 on timeseries.
-                        timeSeries.push(30);
-                        timeWater.push(WATERLEVEL);
-
-                        // Insert data 1 - 29 from database to Array.
-                        for (i=0 ; i<=get30DB.rowCount-1; i++){
-                            timeSeries.push(i);
-                            timeWater.push(get30DB.rows[i].waterlevel);
-                            rmsSquare += Math.pow(get30DB.rows[i].waterlevel, 2);
-                        }    
-                        
-                        //Reverse position because DB is DESCENDING
-                        timeSeries.reverse(); 
-                        timeWater.reverse();//reverse descending data from db and mqtt
-                        
-                        // Do Forecast 30
-                        var forecast = lsq(timeSeries, timeWater);
-                        FORECAST30 = parseFloat(forecast(31).toFixed(2));
-    
-                        // Calculate RMS
-                        rmsMean = (rmsSquare / (get30DB.rowCount));
-                        RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
-                        RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
-
-                        // Fetch 300 Data From Database
-                        var get300DB = await dbase_mqtt.query(`SELECT waterlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 299;`);
-                        
-                        // Temp Variable
-                        var timeSeries_fc300 = []; var timeWater_fc300 = [];
-
-                         // Insert latest data to Array. positition 30 on timeseries.
-                        timeSeries_fc300.push(300);
-                        timeWater_fc300.push(WATERLEVEL);
-                        
-                        //parse all data from db to variable
-                        for (i=0 ; i<=get300DB.rowCount-1; i++){
-                            timeSeries_fc300.push(i);
-                            timeWater_fc300.push(get300DB.rows[i].waterlevel);
-                        }
-                        timeSeries_fc300.reverse(); 
-                        timeWater_fc300.reverse();//reverse descending data from db and mqtt
-
-                        var forecast = lsq(timeSeries_fc300, timeWater_fc300);
-                        FORECAST300 = parseFloat(forecast(301).toFixed(2));
-
-                        // Threshold logic
-                        if (WATERLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
-
-                        //SEND UTC TIME TO JRC
-                        var isoDateString = new Date(DATETIME).toISOString();
-                        const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
-                        mqtt_connect.publish('pummaUTEWS/petengoran', JSON.stringify(jsonToJRC), {qos:0, retain:false});
-
-                        //PUBLISH ALL DATA TO NEW TOPIC ON MQTT
-                        const jsonToPublish = {
-                            "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
-                            "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
-                            "threshold":RMSTHRESHOLD, "status":STATUSWARNING
-                        };
-                        dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
-                        insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
-                            forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,dataArray);
-                            console.log(`[U_TEWS Petengoran 001] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
-
-                        mqtt_connect.publish('pumma/petengoran',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
-
-                        var getLastUpdate = await dbase_mqtt.query("SELECT * FROM mqtt_petengoran ORDER BY date DESC, time DESC LIMIT 100");
-                        var mqtt_data={result: getLastUpdate.rows.reverse()}
-                        mqtt_connect.publish('pumma/petengoran/update',JSON.stringify(mqtt_data), {qos:0, retain:true}, (err) => {
-                            if (err) throw (err);
-                            console.log("[U_TEWS Petengoran 001] Updated " + Date(Date.now()));
-                        });    
-                    }
+                        console.log(`[U_TEWS PETENGORAN 001] ERROR Data Duplicated on time : ${DATETIME}`);
+                    }    
                 }
             }
         }
@@ -177,7 +179,7 @@ module.exports = {
                 if(err) {
                     return console.log(err);
                 }
-                console.log("[U_TEWS Petengoran 001] file was saved!");
+                console.log("[U_TEWS Petengoran 001] Image file was saved!");
             }); 
         }
     }
