@@ -20,9 +20,13 @@ router.get('/petengoran/latestPaged/:count', petengoran_http.latestPagedData); /
 
 //Record of data by time
 router.get('/petengoran/time/:time', petengoran_http.dataByHour); // route request to respond last day data
+router.get('/petengoran/interval', petengoran_http.dataByInterval);
 
 // Send image
 router.get('/petengoran/image/', petengoran_http.sendImage)
+
+// Status Device
+router.get('/petengoran/status', petengoran_http.deviceStatus);
 
 module.exports = router;
 

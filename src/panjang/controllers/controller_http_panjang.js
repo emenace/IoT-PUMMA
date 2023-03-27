@@ -19,7 +19,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -36,7 +36,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -52,7 +52,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows.reverse()
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -75,7 +75,7 @@ module.exports = {
                     endpoint: "/panjang/3days/:page"
                 })
 
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -97,7 +97,7 @@ module.exports = {
                     message:"Data too big. please use 7 days pagination endpoint",
                     endpoint: "/panjang/7days/:page"
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -121,7 +121,7 @@ module.exports = {
                     totalPage:totalPage,
                     result:result.rows.reverse()                    
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -149,7 +149,7 @@ module.exports = {
                         result:result.rows.reverse()
                     })
                 });
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -176,7 +176,7 @@ module.exports = {
                         result:result.rows.reverse()
                     })
                 });
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -197,7 +197,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows.reverse()
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -210,13 +210,13 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime, waterlevel FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                dbase_rest.query(`SELECT id, datetime, waterlevel, voltage, temperature, forecast30, forecast300 FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) console.log(err.message);
                     res.json({
                         count:result.rowCount,
                         result: result.rows
                     })
-                    console.log("Data has been send");
+                    console.log("[REST-API Panjang] Data Sent");
                     done();
                 });
             }else {
@@ -227,6 +227,51 @@ module.exports = {
                 done();
             };
             
+        });
+    },
+
+    // Get data by Date Interval
+    dataByInterval(req, res){
+        dateStart = req.query.start;
+        dateEnd = req.query.end;
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            dbase_rest.query(`SELECT id, datetime as datetime_utc, waterlevel, voltage, temperature, forecast30, forecast300 
+            FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
+                if (err) {
+                    console.log(err.message)
+                    res.status(404);
+                    res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
+                };
+                res.json({
+                    count:result.rowCount,
+                    result: result.rows
+                })
+                console.log("[REST-API Panjang] Data Sent");
+                done();
+            });          
+        });
+    },
+
+    // Get Device Status
+    deviceStatus(req, res){
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            dbase_rest.query(`SELECT datetime waterlevel FROM mqtt_panjang LIMIT 1`, function(err, result){
+                if (err) {
+                    console.log(err.message);
+                };
+                res.json({
+                    sensor : "Sonar",
+                    location : "Gebang, Pesawaran",
+                    country : "Indonesia",
+                    provider : "Telkomsel",
+                    lastWater : result.rows[0].waterlevel,
+                    lastDate : result.rows[0].datetime,
+                })
+                console.log("[REST-API Panjang] Data Sent");
+                done();
+            });          
         });
     },
 

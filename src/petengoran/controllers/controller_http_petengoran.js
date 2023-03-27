@@ -228,6 +228,51 @@ module.exports = {
         });
     },
 
+    // Get data by Date Interval
+    dataByInterval(req, res){
+        dateStart = req.query.start;
+        dateEnd = req.query.end;
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            dbase_rest.query(`SELECT id, datetime as datetime_utc, waterlevel, voltage, temperature, forecast30, forecast300 
+            FROM mqtt_petengoran WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
+                if (err) {
+                    console.log(err.message)
+                    res.status(404);
+                    res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
+                };
+                res.json({
+                    count:result.rowCount,
+                    result: result.rows
+                })
+                console.log("[REST-API Petengoran] Data Sent");
+                done();
+            });          
+        });
+    },
+
+    // Get Device Status
+    deviceStatus(req, res){
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            dbase_rest.query(`SELECT datetime waterlevel FROM mqtt_panjang LIMIT 1`, function(err, result){
+                if (err) {
+                    console.log(err.message);
+                };
+                res.json({
+                    sensor : "Sonar",
+                    location : "Panjang, Krakatau",
+                    country : "Indonesia",
+                    provider : "Telkomsel",
+                    lastWater : result.rows[0].waterlevel,
+                    lastDate_utc : result.rows[0].datetime,
+                })
+                console.log("[REST-API Panjang] Data Sent");
+                done();
+            });          
+        });
+    },
+
     sendImage(req, res){
         res.status(200),
         res.sendfile("src/petengoran/image/petengoran.png")
