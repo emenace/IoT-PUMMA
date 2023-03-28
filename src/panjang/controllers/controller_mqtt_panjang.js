@@ -154,7 +154,11 @@ module.exports = {
                             mqtt_connect.publish('pummaUTEWS/panjang', JSON.stringify(jsonToJRC), {qos:0, retain:false});    
                             mqtt_connect.publish('pumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
                             console.log("[U_TEWS Panjang 003] Updated "+ Date(Date.now()));
-                            
+
+                            //publish data to new topic for 100 data update
+                            var mqttUpdate = await dbase_mqtt.query("SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100");
+                            mqtt_data={result: mqttUpdate.rows.reverse()}
+                            mqtt_connect.publish('pumma/panjang/update',JSON.stringify(mqtt_data), {qos:0, retain:true});                                                       
                         }
                     } else {
                         console.log(`[U_TEWS PANJANG 003] ERROR Data Duplicated on time : ${DATETIME}`);

@@ -145,7 +145,7 @@ module.exports = {
                             dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
                             insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
                                 forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,dataArray);
-                                console.log(`[U_TEWS Petengoran 003] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
+                                console.log(`[U_TEWS Petengoran 001] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
                             
                             var isoDateString = new Date(DATETIME).toISOString();
                             const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
@@ -154,6 +154,11 @@ module.exports = {
                             mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), {qos:0, retain:false});    
                             mqtt_connect.publish('pumma/petengoran',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
                             console.log("[U_TEWS Petengoran 001] Updated "+ Date(Date.now()));
+
+                            //publish data to new topic for 100 data update
+                            var mqttUpdate = await dbase_mqtt.query("SELECT * FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 100");
+                            mqtt_data={result: mqttUpdate.rows.reverse()}
+                            mqtt_connect.publish('pumma/petengoran/update',JSON.stringify(mqtt_data), {qos:0, retain:true});   
                             
                         }
                     } else {
