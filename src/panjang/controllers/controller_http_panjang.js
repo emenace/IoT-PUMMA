@@ -207,12 +207,17 @@ module.exports = {
     dataByHour(req, res){
         time = req.params.time;
         timer = req.query.timer;
+        dataColumn = req.query.data;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT id, datetime as datetime_utc, waterlevel, voltage, temperature, forecast30, forecast300 
+                dbase_rest.query(`SELECT datetime as datetime_utc, ${dataColumn}
                 FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
-                    if (err) console.log(err.message);
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
+                    } 
                     res.json({
                         count:result.rowCount,
                         result: result.rows
@@ -235,14 +240,15 @@ module.exports = {
     dataByInterval(req, res){
         dateStart = req.query.start;
         dateEnd = req.query.end;
+        dataColumn = req.query.data;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT id, datetime as datetime_utc, waterlevel, voltage, temperature, forecast30, forecast300 
+            dbase_rest.query(`SELECT datetime as datetime_utc, ${dataColumn}  
             FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)
                     res.status(404);
-                    res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
+                    res.json({msg: `Error no column ${dataColumn} or Error date format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use date format with YYYY-M-D. Example : 2023-3-28`});
                 };
                 if (result.rowCount===0) {
                     res.status(404);
