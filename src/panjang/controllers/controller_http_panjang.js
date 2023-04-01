@@ -211,7 +211,7 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime as datetime_utc, ${dataColumn}
+                dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
                 FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
@@ -243,7 +243,7 @@ module.exports = {
         dataColumn = req.query.data;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT datetime as datetime_utc, ${dataColumn}  
+            dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
             FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)

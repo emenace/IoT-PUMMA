@@ -76,6 +76,10 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
     });
        
 
+// API HANLDING FOR GLOBAL
+const global_appRoute = require('./src/global_config/routes/route_global');
+api.use('/', cors(), global_appRoute);
+
 // API HANLDING FOR CANTI
 const canti_appRoute = require('./src/canti/routes/route_http_canti');
 api.use('/', cors(), canti_appRoute);

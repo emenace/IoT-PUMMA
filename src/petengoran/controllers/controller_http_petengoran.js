@@ -210,7 +210,7 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime as datetime_utc, ${dataColumn}
+                dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
                 FROM mqtt_petengoran WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
@@ -242,7 +242,7 @@ module.exports = {
         dataColumn = req.query.data;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT datetime as datetime_utc, ${dataColumn}  
+            dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
             FROM mqtt_petengoran WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)
@@ -283,6 +283,42 @@ module.exports = {
                 console.log("[REST-API Panjang] Data Sent");
                 done();
             });          
+        });
+    },
+
+    test(req, res){
+        var data = [];
+        time = req.params.time;
+        timer = req.query.timer;
+        dataColumn = req.query.data;
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
+                dbase_rest.query(`SELECT datetime, ${dataColumn} as data
+                FROM mqtt_petengoran WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        data.push([result.rows[i].datetime, result.rows[i].data])
+                    }
+                    res.json({
+                        count:result.rowCount,
+                        result: data
+                    })
+                    console.log("[REST-API Panjang] Data Sent");
+                    done();
+                });
+            }else {
+                res.status(404);
+                res.json({
+                    message:"Invalid Timer. Use second, minute, hour, day",
+                })
+                done();
+            };
+            
         });
     },
 
