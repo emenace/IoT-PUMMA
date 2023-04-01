@@ -19,8 +19,8 @@ router.get('/petengoran/image/', petengoran_http.sendImage)
 // Status Device
 router.get('/petengoran/status', petengoran_http.deviceStatus);
 
-// Status Device
-router.get('/petengoran/test/:time', petengoran_http.test);
+// Data as List
+router.get('/petengoran/list/:time', petengoran_http.list);
 
 module.exports = router;
 

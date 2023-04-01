@@ -286,7 +286,7 @@ module.exports = {
         });
     },
 
-    test(req, res){
+    list(req, res){
         var data = [];
         time = req.params.time;
         timer = req.query.timer;

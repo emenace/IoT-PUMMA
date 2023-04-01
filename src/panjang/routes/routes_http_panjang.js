@@ -27,5 +27,8 @@ routers.get('/panjang/image/', panjang_http.sendImage)
 // Status Device 
 routers.get('/panjang/status', panjang_http.deviceStatus);
 
+// Data as List
+routers.get('/panjang/list/:time', panjang_http.list);
+
 module.exports = routers;
 

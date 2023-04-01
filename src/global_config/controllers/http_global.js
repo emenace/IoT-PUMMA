@@ -47,25 +47,26 @@ module.exports = {
                 lastWater : getDB_panjang.rows[0].waterlevel,
                 lastDate_utc : getDB_panjang.rows[0].datetime,
             }
+            pool_petengoran.connect(async function (err, client, done){
+                getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+                status_petengoran = {
+                    sensor : "Sonar",
+                    location : "Mangrove Petengoran, Gebang",
+                    country : "Indonesia",
+                    provider : "Telkomsel",
+                    lastWater : getDB_petengoran.rows[0].waterlevel,
+                    lastDate_utc : getDB_petengoran.rows[0].datetime,
+                }           
+                data.push(status_petengoran);
+                
+    
+                // SEND DATA TO API
+                res.json(data)
+                done();
+            });
             data.push(status_panjang);
             done();
         });
-        pool_petengoran.connect(async function (err, client, done){
-            getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
-            status_petengoran = {
-                sensor : "Sonar",
-                location : "Mangrove Petengoran, Gebang",
-                country : "Indonesia",
-                provider : "Telkomsel",
-                lastWater : getDB_petengoran.rows[0].waterlevel,
-                lastDate_utc : getDB_petengoran.rows[0].datetime,
-            }           
-            data.push(status_petengoran);
-            
-
-            // SEND DATA TO API
-            res.json(data)
-            done();
-        });
+        
     },
 }
