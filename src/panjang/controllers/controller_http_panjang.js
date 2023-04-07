@@ -15,6 +15,7 @@ module.exports = {
             if (err) throw err;
             dbase_rest.query("SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100", function(err, result){
                 if (err) throw (err);
+                res.status(200);
                 res.send({
                     count:result.rowCount,
                     result: result.rows
@@ -236,7 +237,7 @@ module.exports = {
         });
     },
 
-    // Get data by Date Interval
+    // Get data by Date
     dataByInterval(req, res){
         dateStart = req.query.start;
         dateEnd = req.query.end;
@@ -265,97 +266,104 @@ module.exports = {
         });
     },
 
-    // Get Device Status
-    deviceStatus(req, res){
+    list(req, res){
+        var data = [];
+        time = req.params.time;
+        timer = req.query.timer;
+        dataColumn = req.query.data;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT datetime waterlevel FROM mqtt_panjang LIMIT 1`, function(err, result){
+            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
+                dbase_rest.query(`SELECT datetime, ${dataColumn} as data
+                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        data.push([result.rows[i].datetime, result.rows[i].data])
+                    }
+                    res.json({
+                        count:result.rowCount,
+                        result: data
+                    })
+                    console.log("[REST-API Panjang] Data Sent");
+                    done();
+                });
+            }else {
+                res.status(404);
+                res.json({
+                    message:"Invalid Timer. Use second, minute, hour, day",
+                })
+                done();
+            };
+            
+        });
+    },
+
+
+    /// SEND ALL DATA BY PARAMETER
+    
+    // Get data by Hour
+    dataTime(req, res){
+        time = req.params.time;
+        timer = req.query.timer;
+        dataColumn = req.query.data;
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
+                dbase_rest.query(`SELECT datetime as utc, waterlevel, forecast30, forecast300, rms, threshold
+                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
+                    } 
+                    res.json({
+                        count:result.rowCount,
+                        result: result.rows
+                    })
+                    console.log("[REST-API Panjang] Data Sent");
+                    done();
+                });
+            }else {
+                res.status(404);
+                res.json({
+                    message:"Invalid Timer. Use second, minute, hour, day",
+                })
+                done();
+            };
+            
+        });
+    },
+
+    // Get data by Date
+    dataDate(req, res){
+        dateStart = req.query.start;
+        dateEnd = req.query.end;
+        dataColumn = req.query.data;
+        dbase_rest.connect(function (err, client, done){
+            if (err) throw err;
+            dbase_rest.query(`SELECT datetime as utc, waterlevel, forecast30, forecast300, rms, threshold
+            FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
-                    console.log(err.message);
+                    console.log(err.message)
+                    res.status(404);
+                    res.json({msg: `Error no column ${dataColumn} or Error date format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use date format with YYYY-M-D. Example : 2023-3-28`});
+                };
+                if (result.rowCount===0) {
+                    res.status(404);
+                    res.send("Error date format. use YYYY-M-D Example : 2023-3-28")
+                    res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
                 };
                 res.json({
-                    sensor : "Sonar",
-                    location : "Gebang, Pesawaran",
-                    country : "Indonesia",
-                    provider : "Telkomsel",
-                    lastWater : result.rows[0].waterlevel,
-                    lastDate : result.rows[0].datetime,
+                    count:result.rowCount,
+                    result: result.rows
                 })
                 console.log("[REST-API Panjang] Data Sent");
                 done();
             });          
-        });
-    },
-
-    list(req, res){
-        var data = [];
-        time = req.params.time;
-        timer = req.query.timer;
-        dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime, ${dataColumn} as data
-                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
-                    if (err) {
-                        console.log(err.message);
-                        res.status(404);
-                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
-                    }
-                    for (i = 0; i<result.rowCount; i++){
-                        data.push([result.rows[i].datetime, result.rows[i].data])
-                    }
-                    res.json({
-                        count:result.rowCount,
-                        result: data
-                    })
-                    console.log("[REST-API Panjang] Data Sent");
-                    done();
-                });
-            }else {
-                res.status(404);
-                res.json({
-                    message:"Invalid Timer. Use second, minute, hour, day",
-                })
-                done();
-            };
-            
-        });
-    },
-
-    list(req, res){
-        var data = [];
-        time = req.params.time;
-        timer = req.query.timer;
-        dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime, ${dataColumn} as data
-                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
-                    if (err) {
-                        console.log(err.message);
-                        res.status(404);
-                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
-                    }
-                    for (i = 0; i<result.rowCount; i++){
-                        data.push([result.rows[i].datetime, result.rows[i].data])
-                    }
-                    res.json({
-                        count:result.rowCount,
-                        result: data
-                    })
-                    console.log("[REST-API Panjang] Data Sent");
-                    done();
-                });
-            }else {
-                res.status(404);
-                res.json({
-                    message:"Invalid Timer. Use second, minute, hour, day",
-                })
-                done();
-            };
-            
         });
     },
 
