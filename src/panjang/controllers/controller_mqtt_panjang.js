@@ -202,9 +202,9 @@ module.exports = {
                 });
             } else {
                 var result = findRemoveSync('src/panjang/image/', {
-                    age: { seconds: 600 },
+                    age: { seconds: 3600 },
                     extensions: '.png',
-                    limit: 1
+                    limit: 50
                 });
                 fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
                     if(err) {

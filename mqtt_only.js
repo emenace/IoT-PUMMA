@@ -35,7 +35,8 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
   forecast30 FLOAT, 
   forecast300 FLOAT,
   rms FLOAT,
-  threshold FLOAT)
+  threshold FLOAT,
+  alertlevel FLOAT)
   `, function(err, result){
     console.log("Database Petengoran Connected");
   });
@@ -52,7 +53,8 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
     forecast30 FLOAT, 
     forecast300 FLOAT,
     rms FLOAT,
-    threshold FLOAT)
+    threshold FLOAT,
+    alertlevel FLOAT)
     `, function(err, result){
       console.log("Database Petengoran Connected");
     });

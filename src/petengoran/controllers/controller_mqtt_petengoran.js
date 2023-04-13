@@ -205,9 +205,9 @@ module.exports = {
                 });
             } else {
                 var result = findRemoveSync('src/petengoran/image/', {
-                    age: { seconds: 600 },
+                    age: { seconds: 3600 },
                     extensions: '.png',
-                    limit: 1,
+                    limit: 50,
                 });
                 fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
                     if(err) {
