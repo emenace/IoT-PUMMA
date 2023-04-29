@@ -38,24 +38,41 @@ module.exports = {
     async deviceStatus(req, res){
         var data = [];
         pool_panjang.connect(async function (err, client, done){
-            getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
+            getDB_panjang = await pool_panjang.query('SELECT datetime,date,time waterlevel FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
+            dateTimeDB1 = getDB_panjang.rows[0].datetime;
+            const date2 = new Date(dateTimeDB1);
+            
+            var time1 = date2.toLocaleTimeString("es-ES");
+            var date1 = date2.toLocaleDateString("en-CA");
+
             status_panjang = {
                 sensor : "Sonar",
                 location : "Panjang, Krakatau",
                 country : "Indonesia",
                 provider : "Telkomsel",
                 lastWater : getDB_panjang.rows[0].waterlevel,
-                lastDate_utc : getDB_panjang.rows[0].datetime,
+                lastDateTime : dateTimeDB1,
+                lastDate : date1,
+                lastTime : time1,
+                
             }
             pool_petengoran.connect(async function (err, client, done){
-                getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+                getDB_petengoran = await pool_petengoran.query('SELECT datetime,date,time waterlevel FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+                dateTimeDB = getDB_petengoran.rows[0].datetime;
+                const date2 = new Date(dateTimeDB);
+                
+                var time = date2.toLocaleTimeString("es-ES");
+                var date = date2.toLocaleDateString("en-CA");
+
                 status_petengoran = {
                     sensor : "Sonar",
                     location : "Mangrove Petengoran, Gebang",
                     country : "Indonesia",
                     provider : "Telkomsel",
                     lastWater : getDB_petengoran.rows[0].waterlevel,
-                    lastDate_utc : getDB_petengoran.rows[0].datetime,
+                    lastDateTime : dateTimeDB,
+                    lastDate : date,
+                    lastTime : time,
                 }           
                 data.push(status_petengoran);
                 
