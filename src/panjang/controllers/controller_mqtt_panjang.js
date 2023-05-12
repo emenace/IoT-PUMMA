@@ -133,7 +133,7 @@ module.exports = {
                             for (i=0 ; i<=get30Alert.rowCount-1; i++){
                                 rmsSquare += Math.pow(get30Alert.rows[i].alertlevel, 2);
                             }   
-                            rmsMean = (rmsSquare / (get30DB.rowCount));
+                            rmsMean = (rmsSquare / (get30Alert.rowCount));
                             RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
                             RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
 

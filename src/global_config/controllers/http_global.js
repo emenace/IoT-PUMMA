@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const moment = require('moment');
 host = process.env.DB_HOST;
 port= process.env.DB_PORT;
 user= process.env.DB_USER;
@@ -38,9 +39,12 @@ module.exports = {
     async deviceStatus(req, res){
         var data = [];
         pool_panjang.connect(async function (err, client, done){
-            getDB_panjang = await pool_panjang.query('SELECT datetime,date,time waterlevel FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
+            getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
+            waterlevel = getDB_panjang.rows[0].waterlevel;
             dateTimeDB1 = getDB_panjang.rows[0].datetime;
             const date2 = new Date(dateTimeDB1);
+   
+            const timestamp = (moment(dateTimeDB1).locale('id').format());
             
             var time1 = date2.toLocaleTimeString("es-ES");
             var date1 = date2.toLocaleDateString("en-CA");
@@ -50,16 +54,22 @@ module.exports = {
                 location : "Panjang, Krakatau",
                 country : "Indonesia",
                 provider : "Telkomsel",
-                lastWater : getDB_panjang.rows[0].waterlevel,
+                lastWater : waterlevel,
                 lastDateTime : dateTimeDB1,
                 lastDate : date1,
                 lastTime : time1,
+                timestamp : timestamp,
                 
             }
             pool_petengoran.connect(async function (err, client, done){
-                getDB_petengoran = await pool_petengoran.query('SELECT datetime,date,time waterlevel FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+                getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+                waterlevel = getDB_petengoran.rows[0].waterlevel;
                 dateTimeDB = getDB_petengoran.rows[0].datetime;
                 const date2 = new Date(dateTimeDB);
+
+                moment.locale('id');
+                const timestamp = (moment(dateTimeDB).locale('id').format());
+                
                 
                 var time = date2.toLocaleTimeString("es-ES");
                 var date = date2.toLocaleDateString("en-CA");
@@ -69,10 +79,11 @@ module.exports = {
                     location : "Mangrove Petengoran, Gebang",
                     country : "Indonesia",
                     provider : "Telkomsel",
-                    lastWater : getDB_petengoran.rows[0].waterlevel,
+                    lastWater : waterlevel,
                     lastDateTime : dateTimeDB,
                     lastDate : date,
                     lastTime : time,
+                    timestamp : timestamp,
                 }           
                 data.push(status_petengoran);
                 
