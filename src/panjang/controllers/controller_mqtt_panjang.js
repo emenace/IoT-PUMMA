@@ -2,6 +2,7 @@ const dbase_mqtt = require('../configs/database_panjang');
 const mqtt_connect = require('../../global_config/mqtt_config');
 const moment = require('moment-timezone');
 const fs = require('fs');
+const findRemoveSync = require('find-remove')
 const lsq = require('least-squares'); //Least square method to forecasting
 
 require('dotenv').config()
@@ -15,7 +16,8 @@ VOLTAGE_PATH = process.env.PAYLOAD_PANJANG_VOLTAGE
 
 var { DATA_ID, TS, DATE, WATERLEVEL, TEMP, VOLTAGE,FORECAST30, FORECAST300, DATETIME } = [];
 
-//Save RMS data for forecasting 
+//Save ALERT and RMS data forecasting 
+var ALERTLEVEL;
 var RMSROOT;
 var RMSTHRESHOLD;
 var STATUSWARNING;
@@ -95,7 +97,6 @@ module.exports = {
                             for (i=0 ; i<=get30DB.rowCount-1; i++){
                                 timeSeries.push(i);
                                 timeWater.push(get30DB.rows[i].waterlevel);
-                                rmsSquare += Math.pow(get30DB.rows[i].waterlevel, 2);
                             }    
                             
                             //Reverse position because DB is DESCENDING
@@ -106,11 +107,6 @@ module.exports = {
                             var forecast = lsq(timeSeries, timeWater);
                             FORECAST30 = parseFloat(forecast(31).toFixed(2));
         
-                            // Calculate RMS
-                            rmsMean = (rmsSquare / (get30DB.rowCount));
-                            RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
-                            RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
-
                             // Fetch 300 Data From Database
                             var get300DB = await dbase_mqtt.query(`SELECT waterlevel FROM mqtt_panjang ORDER BY datetime DESC LIMIT 299;`);
                             
@@ -132,20 +128,30 @@ module.exports = {
                             var forecast = lsq(timeSeries_fc300, timeWater_fc300);
                             FORECAST300 = parseFloat(forecast(301).toFixed(2));
 
-                            // Threshold logic
-                            if (WATERLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
+                            // Calculate RMS
+                            get30Alert = await dbase_mqtt.query('SELECT alertlevel from mqtt_panjang ORDER BY datetime DESC LIMIT 100');
+                            for (i=0 ; i<=get30Alert.rowCount-1; i++){
+                                rmsSquare += Math.pow(get30Alert.rows[i].alertlevel, 2);
+                            }   
+                            rmsMean = (rmsSquare / (get30Alert.rowCount));
+                            RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
+                            RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
 
+                            // ALERT logic
+                            //Calculate Alert
+                            ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
+                            //console.log("ALERT : " + ALERTLEVEL);
+                            if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
 
                             //PUBLISH ALL DATA TO NEW TOPIC ON MQTT
                             const jsonToPublish = {
                                 "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
-                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
+                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
                                 "threshold":RMSTHRESHOLD, "status":STATUSWARNING
                             };
-                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL]; 
                             insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang(id, datetime, time, date, waterlevel, voltage, temperature, 
-                                forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,dataArray);
-                                console.log(`[U_TEWS Panjang 003] : Sensor Time = ${TS}, WLevel = ${WATERLEVEL}`);
+                                forecast30, forecast300, rms, threshold, alertlevel) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,dataArray);
                             
                             var isoDateString = new Date(DATETIME).toISOString();
                             const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
@@ -153,7 +159,7 @@ module.exports = {
                             //SEND UTC TIME TO JRC                       
                             mqtt_connect.publish('pummaUTEWS/panjang', JSON.stringify(jsonToJRC), {qos:0, retain:false});    
                             mqtt_connect.publish('pumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
-                            console.log("[U_TEWS Panjang 003] Updated "+ Date(Date.now()));
+                            console.log("[U_TEWS Panjang 003   ] Updated "+ Date(Date.now()));
 
                             //publish data to new topic for 100 data update
                             var mqttUpdate = await dbase_mqtt.query("SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100");
@@ -178,13 +184,34 @@ module.exports = {
 
             let image = `data:image/jpeg;base64,${message}`
             var data = image.replace(/^data:image\/\w+;base64,/, '');
-
-            fs.writeFile("src/panjang/image/panjang.png", data, {encoding: 'base64'}, function(err) {
+            fs.writeFile(`src/panjang/image/panjang.png`, data, {encoding: 'base64'}, function(err) {
                 if(err) {
                     return console.log(err);
                 }
-                console.log("[U_TEWS Panjang 003] Image file was saved!");
-            }); 
+                console.log("[U_TEWS Panjang 003   ] Image file was saved!");
+            });
+
+            let ts = new Date(Date.now());
+            var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +":"+ ts.getMinutes() +":"+ ts.getSeconds());
+            const itemCount = fs.readdirSync('src/panjang/image/').length;
+            if (itemCount <= 50){
+                fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            } else {
+                var result = findRemoveSync('src/panjang/image/', {
+                    age: { seconds: 3600 },
+                    extensions: '.png',
+                    limit: 50
+                });
+                fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            }   
         }
     }
 }

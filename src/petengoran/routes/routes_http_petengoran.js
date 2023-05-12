@@ -12,12 +12,12 @@ router.get('/petengoran/latestPaged/:count', petengoran_http.latestPagedData); /
 //Record of data by time
 router.get('/petengoran/time/:time', petengoran_http.dataByHour); // route request to respond last day data
 router.get('/petengoran/interval', petengoran_http.dataByInterval);
+//All Record of data by time
+router.get('/petengoran/datatime/:time', petengoran_http.dataTime); // route request to respond last day data
+router.get('/petengoran/datadate', petengoran_http.dataDate);
 
 // Send image
 router.get('/petengoran/image/', petengoran_http.sendImage)
-
-// Status Device
-router.get('/petengoran/status', petengoran_http.deviceStatus);
 
 // Data as List
 router.get('/petengoran/list/:time', petengoran_http.list);

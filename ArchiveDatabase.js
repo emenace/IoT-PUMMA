@@ -71,7 +71,7 @@ async function initialize_db(){//Function to initializing database. check and cr
     pool_petengoran.connect(function (err, client, done){
         if (err) throw err;
         console.log("Database Petengoran Connected");
-        pool_petengoran.query(`CREATE TABLE IF NOT EXISTS archive_mqtt_petengoran (
+        pool_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
             id BIGINT NOT NULL PRIMARY KEY,
             datetime TIMESTAMP NOT NULL,
             time TIME NOT NULL, 
@@ -82,7 +82,8 @@ async function initialize_db(){//Function to initializing database. check and cr
             forecast30 FLOAT, 
             forecast300 FLOAT,
             rms FLOAT,
-            threshold FLOAT)
+            threshold FLOAT,
+            alertlevel FLOAT)
             `, function(err, result){
               console.log("Database Archive Petengoran Connected");
             });
@@ -101,7 +102,7 @@ async function initialize_db(){//Function to initializing database. check and cr
     pool_panjang.connect(function (err, client, done){
         if (err) throw err;
         console.log("Database Panjang Connected");
-        pool_panjang.query(`CREATE TABLE IF NOT EXISTS archive_mqtt_panjang (
+        pool_panjang.query(`CREATE TABLE IF NOT EXISTS mqtt_panjang (
             id BIGINT NOT NULL PRIMARY KEY,
             datetime TIMESTAMP NOT NULL,
             time TIME NOT NULL, 
@@ -112,7 +113,8 @@ async function initialize_db(){//Function to initializing database. check and cr
             forecast30 FLOAT, 
             forecast300 FLOAT,
             rms FLOAT,
-            threshold FLOAT)
+            threshold FLOAT,
+            alertlevel FLOAT)
             `, function(err, result){
               console.log("Database Archive Petengoran Connected");
             });

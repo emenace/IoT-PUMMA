@@ -20,12 +20,12 @@ routers.get('/panjang/latestPaged/:count', panjang_http.latestPagedData); // rou
 //Record of data by time
 routers.get('/panjang/time/:time', panjang_http.dataByHour); // route request to respond last day data
 routers.get('/panjang/interval', panjang_http.dataByInterval);
+//All Record of data by time
+routers.get('/panjang/datatime/:time', panjang_http.dataTime); // route request to respond last day data
+routers.get('/panjang/datadate', panjang_http.dataDate);
 
 // Send image
 routers.get('/panjang/image/', panjang_http.sendImage)
-
-// Status Device 
-routers.get('/panjang/status', panjang_http.deviceStatus);
 
 // Data as List
 routers.get('/panjang/list/:time', panjang_http.list);
