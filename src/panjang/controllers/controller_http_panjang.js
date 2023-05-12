@@ -1,5 +1,6 @@
-const dbase_rest = require('../configs/database_petengoran');
+const dbase_rest = require('../configs/database_panjang');
 require('dotenv').config();
+require('fs');
 
 module.exports = {
 
@@ -9,59 +10,60 @@ module.exports = {
 
     
     // Respond request to give latest 100 data
-    getDataPetengoran(req,res){
+    getDataPanjang(req,res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query("SELECT * FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 100", function(err, result){
+            dbase_rest.query("SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100", function(err, result){
                 if (err) throw (err);
+                res.status(200);
                 res.send({
                     count:result.rowCount,
                     result: result.rows
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
     },
 
     // Respond request to give latest data by count
-    getDataPetengoranByID(req,res){
+    getDataPanjangByID(req,res){
         let count = parseInt(req.params.count);
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_petengoran ORDER BY datetime DESC LIMIT ${count}`, function(err, result){
+            dbase_rest.query(`SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT ${count}`, function(err, result){
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
                     result: result.rows
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
     },
 
     // Respond request to give last 1 day data
-    getDayPetengoran1(req, res){
+    getDayPanjang1(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_petengoran WHERE date >= now() - Interval '1' DAY ORDER BY datetime DESC`, function(err, result){
+            dbase_rest.query(`SELECT * FROM mqtt_panjang WHERE datetime >= now() - Interval '1' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 res.json({
                     count:result.rowCount,
                     result: result.rows.reverse()
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
     },
 
     // Respond request to give last 3 day data
-    getDayPetengoran3(req, res){
+    getDayPanjang3(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date >= now() - Interval '3' DAY ORDER BY datetime DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 var perPage = 100;
                 var totalRow = result.rowCount ;
@@ -71,20 +73,20 @@ module.exports = {
                     count:result.rowCount,
                     totalPage:totalPage,
                     message:"Data too big. please use 3 days pagination endpoint",
-                    endpoint: "/petengoran/3days/:page"
+                    endpoint: "/panjang/3days/:page"
                 })
 
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
     },
     
     // Respond request to give last 7 day data
-    getDayPetengoran7(req, res){
+    getDayPanjang7(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE date >= now() - Interval '7' DAY ORDER BY datetime DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
                 if (err) throw (err);
                 var perPage = 100;
                 var totalRow = result.rowCount ;
@@ -94,25 +96,25 @@ module.exports = {
                     count:result.rowCount,
                     totalPage:totalPage,
                     message:"Data too big. please use 7 days pagination endpoint",
-                    endpoint: "/petengoran/7days/:page"
+                    endpoint: "/panjang/7days/:page"
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
     },
 
-    petengoranPagination(req, res){
+    panjangPagination(req, res){
         var perPage = 100;
         var page = req.params.page;
         var offset = (page -  1) * perPage;
     
         dbase_rest.connect(function (err, client, done){
-        dbase_rest.query(`SELECT count(*) as total FROM mqtt_petengoran`, function(err, result){
+        dbase_rest.query(`SELECT count(*) as total FROM mqtt_panjang`, function(err, result){
             if (err) throw err;
             var totalRow = result.rows[0].total;
             var totalPage = Math.ceil(totalRow / perPage);            
-            dbase_rest.query(`SELECT * from mqtt_petengoran LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+            dbase_rest.query(`SELECT * from mqtt_panjang LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
                 if (err) throw err;
                 res.json({
                     totalData:totalRow,
@@ -120,17 +122,17 @@ module.exports = {
                     totalPage:totalPage,
                     result:result.rows.reverse()                    
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
         });
    },
 
-    getDayPetengoran7page(req, res){
+    getDayPanjang7page(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC`, function(err, result){
                 if (err) throw (err);
 
                 var perPage = 100;
@@ -140,7 +142,7 @@ module.exports = {
                 var totalPage = Math.ceil(totalRow / perPage);
                 var counts = result.rowCount;
 
-                dbase_rest.query(`SELECT *  FROM mqtt_petengoran WHERE datetime > now() - Interval '7' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
                     res.json({
                         count:counts,
                         totalPage:totalPage,
@@ -148,16 +150,16 @@ module.exports = {
                         result:result.rows.reverse()
                     })
                 });
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
     },
 
-    getDayPetengoran3page(req, res){
+    getDayPanjang3page(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_petengoran WHERE datetime >= now() - Interval '3' DAY ORDER BY datetime DESC`, function(err, result){
+            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC`, function(err, result){
                 if (err) throw (err);
 
                 var perPage = 100;
@@ -167,7 +169,7 @@ module.exports = {
                 var totalPage = Math.ceil(totalRow / perPage);
                 var counts = result.rowCount;
 
-                dbase_rest.query(`SELECT *  FROM mqtt_petengoran WHERE datetime >= now() - Interval '3' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
                     res.json({
                         count:counts,
                         totalPage:totalPage,
@@ -175,7 +177,7 @@ module.exports = {
                         result:result.rows.reverse()
                     })
                 });
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -184,8 +186,8 @@ module.exports = {
     latestPagedData(req, res){
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
-            dbase_rest.query(`Select * from mqtt_petengoran 
-            where id in (select id from mqtt_petengoran order by datetime DESC limit ${req.params.count})
+            dbase_rest.query(`Select * from mqtt_panjang 
+            where id in (select id from mqtt_panjang order by datetime DESC limit ${req.params.count})
             order by datetime DESC limit ${req.query.limit} offset ${req.query.offset}`, function(err, result){
                 console.log(req.params.count);
                 console.log(req.query.limit);
@@ -196,7 +198,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows.reverse()
                 })
-                console.log("Data has been send");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });
         });
@@ -211,7 +213,7 @@ module.exports = {
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
-                FROM mqtt_petengoran WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
@@ -221,7 +223,7 @@ module.exports = {
                         count:result.rowCount,
                         result: result.rows
                     })
-                    console.log("[REST-API petengoran] Data Sent");
+                    console.log("[REST-API Panjang] Data Sent");
                     done();
                 });
             }else {
@@ -235,7 +237,7 @@ module.exports = {
         });
     },
 
-    // Get data by Date Interval
+    // Get data by Date
     dataByInterval(req, res){
         dateStart = req.query.start;
         dateEnd = req.query.end;
@@ -243,7 +245,7 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
-            FROM mqtt_petengoran WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
+            FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)
                     res.status(404);
@@ -258,7 +260,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows
                 })
-                console.log("[REST-API petengoran] Data Sent");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });          
         });
@@ -273,7 +275,7 @@ module.exports = {
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime, ${dataColumn} as data
-                FROM mqtt_petengoran WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
@@ -286,7 +288,7 @@ module.exports = {
                         count:result.rowCount,
                         result: data
                     })
-                    console.log("[REST-API petengoran] Data Sent");
+                    console.log("[REST-API Panjang] Data Sent");
                     done();
                 });
             }else {
@@ -300,17 +302,19 @@ module.exports = {
         });
     },
 
+
     /// SEND ALL DATA BY PARAMETER
     
     // Get data by Hour
     dataTime(req, res){
         time = req.params.time;
         timer = req.query.timer;
+        dataColumn = req.query.data;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime as utc, waterlevel, forecast30, forecast300, rms, threshold
-                FROM mqtt_petengoran WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
@@ -320,7 +324,7 @@ module.exports = {
                         count:result.rowCount,
                         result: result.rows
                     })
-                    console.log("[REST-API petengoran] Data Sent");
+                    console.log("[REST-API Panjang] Data Sent");
                     done();
                 });
             }else {
@@ -338,10 +342,11 @@ module.exports = {
     dataDate(req, res){
         dateStart = req.query.start;
         dateEnd = req.query.end;
+        dataColumn = req.query.data;
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, waterlevel, forecast30, forecast300, rms, threshold
-            FROM mqtt_petengoran WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
+            FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)
                     res.status(404);
@@ -356,7 +361,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows
                 })
-                console.log("[REST-API petengoran] Data Sent");
+                console.log("[REST-API Panjang] Data Sent");
                 done();
             });          
         });
@@ -364,6 +369,6 @@ module.exports = {
 
     sendImage(req, res){
         res.status(200),
-        res.sendfile("src/petengoran/image/petengoran.png")
+        res.sendfile("src/panjang/image/panjang.png")
     },
 }

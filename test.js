@@ -1,34 +1,24 @@
-// Dependencies
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
-const express = require('express');
+date1 = "2023-03-28"
+date2 = "2023-03-27"
 
-const app = express();
+console.log(Date.parse(date1));
+console.log(Date.parse(date2));
 
-// Certificate
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/cert.pem', 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/chain.pem', 'utf8');
+const fs = require('fs')
+const length = fs.readdirSync('src/panjang/image/').length
+console.log(length);
 
-const credentials = {
-    key: privateKey,
-    cert: certificate,
-    ca: ca
-};
+let ts = new Date(Date.now());
 
-app.use((req, res) => {
-    res.send('Hello there !');
-});
+let date_time = new Date(ts);
+let date = date_time.getDate();
+let month = date_time.getMonth();
+let year = date_time.getFullYear();
+let time = date_time.getTime();
 
-// Starting both http & https servers
-const httpServer = http.createServer(app);
-const httpsServer = https.createServer(credentials, app);
+// prints date & time in YYYY-MM-DD format
+console.log(year + "-" + month + "-" + date+"-" + time);
 
-httpServer.listen(8082, () => {
-    console.log('HTTP Server running on port 80');
-});
+var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +":"+ ts.getMinutes() +":"+ ts.getSeconds());
+console.log(datetimes);
 
-httpsServer.listen(4443, () => {
-    console.log('HTTPS Server running on port 443');
-});
