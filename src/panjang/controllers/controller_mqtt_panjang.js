@@ -2,6 +2,7 @@ const dbase_mqtt = require('../configs/database_panjang');
 const mqtt_connect = require('../../global_config/mqtt_config');
 const moment = require('moment-timezone');
 const fs = require('fs');
+const path = require('path');
 const findRemoveSync = require('find-remove')
 const lsq = require('least-squares'); //Least square method to forecasting
 
@@ -21,6 +22,7 @@ var ALERTLEVEL;
 var RMSROOT;
 var RMSTHRESHOLD;
 var STATUSWARNING;
+var FEEDLATENCY;
 
 //FAILSAFE
 if (TEMP===null){TEMP=49};
@@ -53,80 +55,108 @@ module.exports = {
 
                     DATETIME = DATE +'T'+ TS;
                     DATA_ID = Date.parse(DATETIME);
+                    FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
                     
                     //Data Duplication Check
                     var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_panjang where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
                     if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
-                        console.log(`[U_TEWS PANJANG 003] OK. No data Duplicated on time : ${DATETIME}`);
-
+                        
                         // fetch data DB
                         var dataDB_panjang = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_panjang ORDER BY datetime DESC LIMIT 300;`);
-                        var dbPanjang_dataLength = dataDB_panjang.rowCount;
-
-                        if (payload.hasOwnProperty(TEMP_PATH)) {
-                            TEMP = parseFloat(payload[TEMP_PATH]);
+                        if (dataDB_panjang.rowCount === 0){
+                            console.log("Database still empty. Waiting for new data");
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang(id, datetime, time, date, waterlevel, voltage, temperature, 
+                            forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
                         } else {
-                            TEMP = (dataDB_panjang.rows[dbPanjang_dataLength].temperature); //use latest data from database if temperature not available
+                            var pull30_length;
+                            var dbPanjang_dataLength = dataDB_panjang.rowCount;
+                            
+                            if (payload.hasOwnProperty(TEMP_PATH)) {
+                                TEMP = parseFloat(payload[TEMP_PATH]);
+                            } else {
+                                TEMP = (dataDB_panjang.rows[0].temperature); //use latest data from database if temperature not available
+                            }
+
+                            if (payload.hasOwnProperty(VOLTAGE_PATH)) {
+                                VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
+                            } else {
+                                VOLTAGE = (dataDB_panjang.rows[0].voltage); //use latest data from database if temperature not available
+                            }
+
+                            // Forecast 30
+                            if (dbPanjang_dataLength <= 30){
+                                pull30_length = dbPanjang_dataLength;
+                            } else {
+                                pull30_length = 30;
+                            }
+                            var timeSeries = []; var timeWater = [];
+                            var rmsSquare = 0;   var rmsMean = 0;
+                            timeSeries.push(30);
+                            timeWater.push(WATERLEVEL);
+
+                            for (i=0 ; i<=pull30_length-1; i++){
+                                timeSeries.push(i);
+                                timeWater.push(dataDB_panjang.rows[i].waterlevel);
+                            }   
+                            timeSeries.reverse(); 
+                            timeWater.reverse();
+                            var forecast = lsq(timeSeries, timeWater);
+                            FORECAST30 = parseFloat(forecast(31).toFixed(2));
+
+                            // Forecast 300
+                            var timeSeries_fc300 = []; var timeWater_fc300 = [];
+                            timeSeries_fc300.push(300);
+                            timeWater_fc300.push(WATERLEVEL);
+
+                            for (i=0 ; i<=dataDB_panjang.rowCount-1; i++){
+                                timeSeries_fc300.push(i);
+                                timeWater_fc300.push(dataDB_panjang.rows[i].waterlevel);
+                            }
+                            timeSeries_fc300.reverse(); 
+                            timeWater_fc300.reverse();//reverse descending data from db and mqtt
+
+                            var forecast3 = lsq(timeSeries_fc300, timeWater_fc300);
+                            FORECAST300 = parseFloat(forecast3(301).toFixed(2));
+
+                            // Calculate RMS
+                            for (i=0 ; i<=dataDB_panjang.rowCount-1; i++){
+                                rmsSquare += Math.pow(dataDB_panjang.rows[i].alertlevel, 2);
+                            }    
+                            rmsMean = (rmsSquare / (dataDB_panjang.rowCount));
+                            RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
+                            RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
+
+                            // ALERT logic
+                            //Calculate Alert
+                            ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
+                            //console.log("ALERT : " + ALERTLEVEL);
+                            if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
+
+                            console.log(`[U_TEWS PANJANG 003   ] OK. TIME : ${Date(DATETIME)}`);
+
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang(id, datetime, time, date, waterlevel, voltage, temperature, 
+                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang_archive(id, datetime, time, date, waterlevel, voltage, temperature, 
+                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+
+                            // PUBLISH DATA
+                            
+                            var isoDateString = new Date(DATETIME).toISOString();
+                            const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
+                            const jsonToPublish = {
+                                "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
+                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
+                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
+                            };
+
+                            mqtt_connect.publish('TESTpummaUTEWS/panjang', JSON.stringify(jsonToJRC), {qos:0, retain:false});    
+                            mqtt_connect.publish('TESTpumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
                         }
-
-                        if (payload.hasOwnProperty(VOLTAGE_PATH)) {
-                            VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
-                        } else {
-                            VOLTAGE = (dataDB_panjang.rows[dbPanjang_dataLength].voltage); //use latest data from database if temperature not available
-                        }
-
-                        // Forecast 30
-                        var timeSeries = []; var timeWater = [];
-                        var rmsSquare = 0;   var rmsMean = 0;
-                        timeSeries.push(30);
-                        timeWater.push(WATERLEVEL);
-
-                        for (i=0 ; i<=29; i++){
-                            timeSeries.push(i);
-                            timeWater.push(dataDB_panjang.rows[i].waterlevel);
-                        }   
-                        timeSeries.reverse(); 
-                        timeWater.reverse();
-                        var forecast = lsq(timeSeries, timeWater);
-                        FORECAST30 = parseFloat(forecast(31).toFixed(2));
-
-                        // Forecast 300
-                        var timeSeries_fc300 = []; var timeWater_fc300 = [];
-                        timeSeries_fc300.push(300);
-                        timeWater_fc300.push(WATERLEVEL);
-
-                        for (i=0 ; i<=299; i++){
-                            timeSeries_fc300.push(i);
-                            timeWater_fc300.push(dataDB_panjang.rows[i].waterlevel);
-                        }
-                        timeSeries_fc300.reverse(); 
-                        timeWater_fc300.reverse();//reverse descending data from db and mqtt
-
-                        var forecast3 = lsq(timeSeries_fc300, timeWater_fc300);
-                        FORECAST300 = parseFloat(forecast3(301).toFixed(2));
-
-                        // Calculate RMS
-                        for (i=0 ; i<=100; i++){
-                            rmsSquare += Math.pow(dataDB_panjang.rows[i].alertlevel, 2);
-                        }    
-                        rmsMean = (rmsSquare / (dataDB_panjang.rowCount));
-                        RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
-                        RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
-
-                        // ALERT logic
-                        //Calculate Alert
-                        ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
-                        //console.log("ALERT : " + ALERTLEVEL);
-                        if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
-
-                        console.log(`Panjang = ID : ${DATA_ID}, DATETIME : ${DATETIME}, WL : ${WATERLEVEL}, FC30 : ${FORECAST30}, FC300 : ${FORECAST300}, RMS : ${RMSROOT}, THR : ${RMSTHRESHOLD}, AL : ${ALERTLEVEL}`);
-
-                        dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL]; 
-                        insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang(id, datetime, time, date, waterlevel, voltage, temperature, 
-                            forecast30, forecast300, rms, threshold, alertlevel) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,dataArray);
 
                     } else {
-                        console.log(`[U_TEWS PANJANG 003] ERROR Data Duplicated on time : ${DATETIME}`);
+                        console.log(`[U_TEWS PANJANG 003   ] ERROR Data Duplicated on time : ${DATETIME}`);
                     }    
                 }
             }
@@ -151,7 +181,7 @@ module.exports = {
             });
 
             let ts = new Date(Date.now());
-            var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +":"+ ts.getMinutes() +":"+ ts.getSeconds());
+            var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
             const itemCount = fs.readdirSync('src/panjang/image/').length;
             if (itemCount <= 50){
                 fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {

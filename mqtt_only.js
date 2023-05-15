@@ -23,6 +23,20 @@ dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti (
     console.log("Database Canti Connected");
   });
 
+  dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti_archive (
+    time TIME NOT NULL, 
+    date DATE NOT NULL, 
+    waterLevel FLOAT, 
+    voltage FLOAT, 
+    temperature FLOAT,
+    forecast30 FLOAT, 
+    forecast300 FLOAT,
+    rms FLOAT,
+    threshold FLOAT)
+    `, function(err, result){
+      console.log("Database Canti Connected");
+    });
+
 const dbase_petengoran = require('./src/petengoran/configs/database_petengoran'); 
 dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
   id BIGINT NOT NULL PRIMARY KEY,
@@ -36,10 +50,28 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
   forecast300 FLOAT,
   rms FLOAT,
   threshold FLOAT,
-  alertlevel FLOAT)
+  alertlevel FLOAT,
+  feedlatency INT)
   `, function(err, result){
     console.log("Database Petengoran Connected");
   });
+  dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran_archive (
+    id BIGINT NOT NULL PRIMARY KEY,
+    datetime TIMESTAMP NOT NULL,
+    time TIME NOT NULL, 
+    date DATE NOT NULL, 
+    waterLevel FLOAT, 
+    voltage FLOAT, 
+    temperature FLOAT,
+    forecast30 FLOAT, 
+    forecast300 FLOAT,
+    rms FLOAT,
+    threshold FLOAT,
+    alertlevel FLOAT,
+    feedlatency INT)
+    `, function(err, result){
+      console.log("Database Petengoran Connected");
+    });
        
   const dbase_panjang = require('./src/panjang/configs/database_panjang'); 
   dbase_panjang.query(`CREATE TABLE IF NOT EXISTS mqtt_panjang (
@@ -54,10 +86,28 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
     forecast300 FLOAT,
     rms FLOAT,
     threshold FLOAT,
-    alertlevel FLOAT)
+    alertlevel FLOAT,
+    feedlatency INT)
     `, function(err, result){
       console.log("Database Petengoran Connected");
     });
+    dbase_panjang.query(`CREATE TABLE IF NOT EXISTS mqtt_panjang_archive (
+      id BIGINT NOT NULL PRIMARY KEY,
+      datetime TIMESTAMP NOT NULL,
+      time TIME NOT NULL, 
+      date DATE NOT NULL, 
+      waterLevel FLOAT, 
+      voltage FLOAT, 
+      temperature FLOAT,
+      forecast30 FLOAT, 
+      forecast300 FLOAT,
+      rms FLOAT,
+      threshold FLOAT,
+      alertlevel FLOAT,
+      feedlatency INT)
+      `, function(err, result){
+        console.log("Database Petengoran Connected");
+      });
 
 //// MQTT HANDLING 
 const mqtt_connect = require('./src/global_config/mqtt_config')
