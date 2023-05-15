@@ -1,4 +1,4 @@
-const dbase = require('./src/petengoran/configs/database_petengoran');
+const dbase = require('../petengoran/configs/database_petengoran');
 require('dotenv').config()
 
 async function main(){

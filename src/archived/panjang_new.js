@@ -1,5 +1,5 @@
-const dbase_mqtt = require('../configs/database_panjang');
-const mqtt_connect = require('../../global_config/mqtt_config');
+const dbase_mqtt = require('../panjang/configs/database_panjang');
+const mqtt_connect = require('../global_config/mqtt_config');
 const moment = require('moment-timezone');
 const fs = require('fs');
 const findRemoveSync = require('find-remove')
