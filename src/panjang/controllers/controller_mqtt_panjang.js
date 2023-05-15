@@ -142,7 +142,7 @@ module.exports = {
                             dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
                             insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang(id, datetime, time, date, waterlevel, voltage, temperature, 
                                 forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
-                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang_archive(id, datetime, time, date, waterlevel, voltage, temperature, 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_panjang_stored(id, datetime, time, date, waterlevel, voltage, temperature, 
                                 forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
 
                             // PUBLISH DATA
@@ -155,8 +155,8 @@ module.exports = {
                                 "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
                             };
 
-                            mqtt_connect.publish('TESTpummaUTEWS/panjang', JSON.stringify(jsonToJRC), {qos:0, retain:false});    
-                            mqtt_connect.publish('TESTpumma/panjang',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {});
+                            mqtt_connect.publish('pummaUTEWS/panjang', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
+                            mqtt_connect.publish('pumma/panjang',JSON.stringify(jsonToPublish), {qos: 2, retain:false}, (err) => {});
                         }
 
                     } else {

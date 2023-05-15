@@ -23,7 +23,7 @@ dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti (
     console.log("Database Canti Connected");
   });
 
-  dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti_archive (
+  dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti_stored (
     time TIME NOT NULL, 
     date DATE NOT NULL, 
     waterLevel FLOAT, 
@@ -55,7 +55,7 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
   `, function(err, result){
     console.log("Database Petengoran Connected");
   });
-  dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran_archive (
+  dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran_stored (
     id BIGINT NOT NULL PRIMARY KEY,
     datetime TIMESTAMP NOT NULL,
     time TIME NOT NULL, 
@@ -91,7 +91,7 @@ dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
     `, function(err, result){
       console.log("Database Petengoran Connected");
     });
-    dbase_panjang.query(`CREATE TABLE IF NOT EXISTS mqtt_panjang_archive (
+    dbase_panjang.query(`CREATE TABLE IF NOT EXISTS mqtt_panjang_stored (
       id BIGINT NOT NULL PRIMARY KEY,
       datetime TIMESTAMP NOT NULL,
       time TIME NOT NULL, 

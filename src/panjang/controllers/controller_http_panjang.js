@@ -245,7 +245,7 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
-            FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
+            FROM mqtt_panjang_stored WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)
                     res.status(404);
@@ -346,7 +346,7 @@ module.exports = {
         dbase_rest.connect(function (err, client, done){
             if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, waterlevel, forecast30, forecast300, rms, threshold
-            FROM mqtt_panjang WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
+            FROM mqtt_panjang_stored WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)
                     res.status(404);

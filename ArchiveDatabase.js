@@ -61,10 +61,10 @@ async function initialize_db(){//Function to initializing database. check and cr
         pool_canti.query(`INSERT INTO archive_mqtt_canti SELECT * FROM mqtt_canti`,function(err, result){
             if (err) throw (err);
             console.log("Archiving....");
-            // pool_canti.query('TRUNCATE TABLE mqtt_canti', function(err, result){
-            //     if (err) throw (err);
+            pool_canti.query('TRUNCATE TABLE mqtt_canti', function(err, result){
+                if (err) throw (err);
                 console.log(`${new Date().toLocaleString()} |`+" Database Canti Archived Successfully");
-            // })
+            })
         });
     });
     
@@ -92,11 +92,11 @@ async function initialize_db(){//Function to initializing database. check and cr
             if (err)
                 throw (err);
             console.log("Archiving....");
-            // pool_petengoran.query('TRUNCATE TABLE mqtt_petengoran', function (err, result) {
-            //     if (err)
-            //         throw (err);
+            pool_petengoran.query('TRUNCATE TABLE mqtt_petengoran', function (err, result) {
+                if (err)
+                    throw (err);
                 console.log(`${new Date().toLocaleString()} |`+" Database Petengoran Archived Successfully");
-            // });
+            });
         });
       
     });
@@ -123,10 +123,10 @@ async function initialize_db(){//Function to initializing database. check and cr
         pool_panjang.query(`INSERT INTO archive_mqtt_panjang (SELECT * FROM mqtt_panjang WHERE id NOT IN (select id from archive_mqtt_panjang))`,function(err, result){
             if (err) throw (err);
             console.log("Archiving....");
-            // pool_panjang.query('TRUNCATE TABLE mqtt_panjang', function(err, result){
-            //     if (err) throw (err);
+            pool_panjang.query('TRUNCATE TABLE mqtt_panjang', function(err, result){
+                if (err) throw (err);
                 console.log(`${new Date().toLocaleString()} |`+" Database Panjang Archived Successfully");
-            // })
+            })
         });
     });
 }
