@@ -60,13 +60,16 @@ module.exports = {
                     //Data Duplication Check
                     var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_panjang where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
                     if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
+                        var count_panjang = await dbase_mqtt.query(`SELECT count(*) from mqtt_panjang`);
                         
-                        // fetch data DB
-                        var dataDB_panjang = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_panjang ORDER BY datetime DESC LIMIT 300;`);
-                        if (dataDB_panjang.rowCount >= 500000){
+                        //remove old data
+                        if (count_panjang.rows[0].count >= 500000){
                             dbPanjang_delete_lastweek = await dbase_mqtt.query(`DELETE FROM mqtt_panjang WHERE datetime < now()-'1 week'::interval`);
                             console.log(`[U_TEWS PANJANG 003   ] Fast-table Cleaned`);
-                        }
+                        }   
+
+                        // fetch data DB
+                        var dataDB_panjang = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_panjang ORDER BY datetime DESC LIMIT 300;`);
                         if (dataDB_panjang.rowCount === 0){
                             console.log("Database still empty. Waiting for new data");
                             dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
