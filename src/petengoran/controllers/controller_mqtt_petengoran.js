@@ -53,16 +53,19 @@ module.exports = {
                     WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
 
                     DATETIME = DATE +'T'+ TS;
-                    DATA_ID = Date.parse(DATETIME);
+                    DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
                     FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
                     
                     //Data Duplication Check
                     var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_petengoran where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
                     if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
                         
-
                         // fetch data DB
                         var dataDB_petengoran = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 300;`);
+                        if (dataDB_petengoran.rowCount >= 500000){
+                            dbPetengoran_delete_lastweek = await dbase_mqtt.query(`DELETE FROM mqtt_petengoran WHERE datetime < now()-'1 week'::interval`);
+                            console.log(`[U_TEWS PETENGORAN 003   ] Fast-table Cleaned`);
+                        }                        
                         if (dataDB_petengoran.rowCount === 0){
                             console.log("Database still empty. Waiting for new data");
                             dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 

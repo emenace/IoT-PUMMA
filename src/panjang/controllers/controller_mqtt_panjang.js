@@ -54,7 +54,7 @@ module.exports = {
                     WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
 
                     DATETIME = DATE +'T'+ TS;
-                    DATA_ID = Date.parse(DATETIME);
+                    DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
                     FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
                     
                     //Data Duplication Check
@@ -63,6 +63,10 @@ module.exports = {
                         
                         // fetch data DB
                         var dataDB_panjang = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_panjang ORDER BY datetime DESC LIMIT 300;`);
+                        if (dataDB_panjang.rowCount >= 500000){
+                            dbPanjang_delete_lastweek = await dbase_mqtt.query(`DELETE FROM mqtt_panjang WHERE datetime < now()-'1 week'::interval`);
+                            console.log(`[U_TEWS PANJANG 003   ] Fast-table Cleaned`);
+                        }
                         if (dataDB_panjang.rowCount === 0){
                             console.log("Database still empty. Waiting for new data");
                             dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
