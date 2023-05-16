@@ -7,23 +7,23 @@ password = process.env.DB_PASSWORD
 
 const pool_canti = new Pool({
     host:host,
-    posrt:port,
+    port:port,
     user:user,
     password: password,
     database: process.env.DB_CANTI
 });
 const pool_petengoran = new Pool({
     host:host,
-    posrt:port,
-    user:user,
-    password: password,
+    port:port,
+    user:"user_petengoran",
+    password: "pwd123",
     database: process.env.DB_PETENGORAN
 });
 const pool_panjang = new Pool({
     host:host,
-    posrt:port,
-    user:user,
-    password: password,
+    port:port,
+    user:"user_panjang",
+    password: "pwd123",
     database: process.env.DB_PANJANG
 });
 
@@ -90,10 +90,10 @@ module.exports = {
     
                 // SEND DATA TO API
                 res.json(data)
-                done();
+                
             });
             data.push(status_panjang);
-            done();
+            
         });
         
     },
