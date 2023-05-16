@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const petengoran_http = require('../controllers/controller_http_petengoran');
+const petengoran_http = require('../petengoran/controllers/controller_http_petengoran');
 
 // Record of data
 router.get('/petengoran/latest', petengoran_http.getDataPetengoran);// route request to respond lastest 100 data

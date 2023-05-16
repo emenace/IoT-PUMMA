@@ -1,4 +1,4 @@
-const dbase_rest = require('../configs/database_panjang');
+const dbase_rest = require('../panjang/configs/database_panjang');
 require('dotenv').config();
 require('fs');
 

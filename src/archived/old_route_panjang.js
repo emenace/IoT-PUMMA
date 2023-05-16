@@ -1,5 +1,5 @@
 const routers = require('express').Router();
-const panjang_http = require('../controllers/controller_http_panjang');
+const panjang_http = require('../panjang/controllers/controller_http_panjang');
 
 //Record of data
 routers.get('/panjang/latest', panjang_http.getDataPanjang);// route request to respond lastest 100 data

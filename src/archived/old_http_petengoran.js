@@ -1,4 +1,4 @@
-const dbase_rest = require('../configs/database_petengoran');
+const dbase_rest = require('../petengoran/configs/database_petengoran');
 require('dotenv').config();
 
 module.exports = {
