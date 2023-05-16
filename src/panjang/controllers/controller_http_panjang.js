@@ -32,7 +32,7 @@ module.exports = {
 
     async get_countData(req,res){
         var count = parseInt(req.params.count);
-        data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
+        data = await dbase_rest.query(`SELECT datetime, time, date, waterlevel, voltage, temperature, 
             forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
             FROM mqtt_panjang ORDER BY datetime DESC LIMIT ${count}`);
         res.status(200);

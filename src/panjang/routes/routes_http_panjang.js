@@ -13,10 +13,8 @@ routers.get('/panjang/pageCount/:count', panjang_http.get_paginationCount); // r
 routers.get('/panjang/time/:time', panjang_http.get_byTime_obj); // route request to respond last day data
 routers.get('/panjang/list/:time', panjang_http.get_byTime_list);
 
-
 //Record of data by date
 routers.get('/panjang/interval', panjang_http.get_byDate_obj);
-
 
 // Send image
 routers.get('/panjang/image/', panjang_http.get_lastImage)
