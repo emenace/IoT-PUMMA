@@ -83,7 +83,8 @@ async function initialize_db(){//Function to initializing database. check and cr
             forecast300 FLOAT,
             rms FLOAT,
             threshold FLOAT,
-            alertlevel FLOAT)
+            alertlevel FLOAT,
+            feedlatency INT)
             `, function(err, result){
               console.log("Database Archive Petengoran Connected");
             });
@@ -114,7 +115,8 @@ async function initialize_db(){//Function to initializing database. check and cr
             forecast300 FLOAT,
             rms FLOAT,
             threshold FLOAT,
-            alertlevel FLOAT)
+            alertlevel FLOAT,
+            feedlatency INT)
             `, function(err, result){
               console.log("Database Archive Petengoran Connected");
             });
