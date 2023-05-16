@@ -1,4 +1,14 @@
-const dbase_rest = require('../configs/database_panjang');
+//const dbase_rest = require('../configs/database_panjang');
+
+const { Pool } = require('pg');
+const dbase_rest = new Pool({
+    host:host,
+    posrt:port,
+    user:user,
+    password: password,
+    database: process.env.DB_PANJANG
+})
+
 require('dotenv').config();
 require('fs');
 
@@ -11,97 +21,12 @@ module.exports = {
     
     // Respond request to give latest 100 data
     getDataPanjang(req,res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query("SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100", function(err, result){
-                if (err) throw (err);
-                res.status(200);
-                res.send({
-                    count:result.rowCount,
-                    result: result.rows
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
+        
     },
 
     // Respond request to give latest data by count
     getDataPanjangByID(req,res){
-        let count = parseInt(req.params.count);
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT ${count}`, function(err, result){
-                if (err) throw (err);
-                res.json({
-                    count:result.rowCount,
-                    result: result.rows
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
-
-    // Respond request to give last 1 day data
-    getDayPanjang1(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_panjang WHERE datetime >= now() - Interval '1' DAY ORDER BY date DESC, time DESC`, function(err, result){
-                if (err) throw (err);
-                res.json({
-                    count:result.rowCount,
-                    result: result.rows.reverse()
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
-
-    // Respond request to give last 3 day data
-    getDayPanjang3(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
-                if (err) throw (err);
-                var perPage = 100;
-                var totalRow = result.rowCount ;
-                var totalPage = Math.ceil(totalRow / perPage);
-
-                res.json({
-                    count:result.rowCount,
-                    totalPage:totalPage,
-                    message:"Data too big. please use 3 days pagination endpoint",
-                    endpoint: "/panjang/3days/:page"
-                })
-
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
-    
-    // Respond request to give last 7 day data
-    getDayPanjang7(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
-                if (err) throw (err);
-                var perPage = 100;
-                var totalRow = result.rowCount ;
-                var totalPage = Math.ceil(totalRow / perPage);
-
-                res.json({
-                    count:result.rowCount,
-                    totalPage:totalPage,
-                    message:"Data too big. please use 7 days pagination endpoint",
-                    endpoint: "/panjang/7days/:page"
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
+        
     },
 
     panjangPagination(req, res){
@@ -110,75 +35,21 @@ module.exports = {
         var offset = (page -  1) * perPage;
     
         dbase_rest.connect(function (err, client, done){
-        dbase_rest.query(`SELECT count(*) as total FROM mqtt_panjang`, function(err, result){
-            if (err) throw err;
-            var totalRow = result.rows[0].total;
-            var totalPage = Math.ceil(totalRow / perPage);            
-            dbase_rest.query(`SELECT * from mqtt_panjang LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+            dbase_rest.query(`SELECT count(*) as total FROM mqtt_panjang`, function(err, result){
                 if (err) throw err;
-                res.json({
-                    totalData:totalRow,
-                    page:page,
-                    totalPage:totalPage,
-                    result:result.rows.reverse()                    
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-        });
-   },
-
-    getDayPanjang7page(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC`, function(err, result){
-                if (err) throw (err);
-
-                var perPage = 100;
-                var page = req.params.page;
-                var offset = (page -  1) * perPage;
-                var totalRow = result.rowCount;
-                var totalPage = Math.ceil(totalRow / perPage);
-                var counts = result.rowCount;
-
-                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                var totalRow = result.rows[0].total;
+                var totalPage = Math.ceil(totalRow / perPage);            
+                dbase_rest.query(`SELECT * from mqtt_panjang LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
+                    if (err) throw err;
                     res.json({
-                        count:counts,
-                        totalPage:totalPage,
+                        totalData:totalRow,
                         page:page,
-                        result:result.rows.reverse()
-                    })
-                });
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
-
-    getDayPanjang3page(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC`, function(err, result){
-                if (err) throw (err);
-
-                var perPage = 100;
-                var page = req.params.page;
-                var offset = (page -  1) * perPage;
-                var totalRow = result.rowCount;
-                var totalPage = Math.ceil(totalRow / perPage);
-                var counts = result.rowCount;
-
-                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
-                    res.json({
-                        count:counts,
                         totalPage:totalPage,
-                        page:page,
-                        result:result.rows.reverse()
+                        result:result.rows.reverse()                    
                     })
+                    console.log("[REST-API Panjang] Data Sent");
+                    done();
                 });
-                console.log("[REST-API Panjang] Data Sent");
-                done();
             });
         });
     },
