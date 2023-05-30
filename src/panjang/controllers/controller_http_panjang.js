@@ -1,4 +1,5 @@
 const path = require('path');
+const moment = require('moment');
 const { Pool } = require('pg');
 const { off } = require('process');
 const dbase_rest = new Pool({
@@ -25,7 +26,7 @@ module.exports = {
         res.status(200);
         res.send({
             count:data.rowCount,
-            result:data.rows
+            result:data.rows.reverse(),
         })
 
         console.log("[REST-API Panjang] GET 100 Data");
@@ -39,7 +40,7 @@ module.exports = {
         res.status(200);
         res.send({
             count:data.rowCount,
-            result:data.rows
+            result:data.rows.reverse(),
         })
 
         console.log(`[REST-API Panjang] GET ${count} Data`);
@@ -100,7 +101,7 @@ module.exports = {
                 } 
                 res.json({
                     count:result.rowCount,
-                    result: result.rows
+                    result: result.rows.reverse(),
                 })
                 console.log(`[REST-API Panjang] GET ${dataColumn} FOR ${time} ${timer} AS OBJECT`);
             });
@@ -128,11 +129,12 @@ module.exports = {
                         res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
                     }
                     for (i = 0; i<result.rowCount; i++){
-                        data.push([result.rows[i].datetime, result.rows[i].data])
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].data])
                     }
                     res.json({
                         count:result.rowCount,
-                        result: data
+                        result: data.reverse(),
                     })
                     console.log(`[REST-API Panjang] GET ${dataColumn} FOR ${time} ${timer} AS LIST`);
                 });
@@ -169,7 +171,7 @@ module.exports = {
                 };
                 res.json({
                     count:result.rowCount,
-                    result: result.rows
+                    result: result.rows.reverse(),
                 })
                 console.log(`[REST-API Panjang] GET ${dataColumn} DATA FROM ${dateStart} TO ${dateEnd} AS OBJECT`);
             });          
