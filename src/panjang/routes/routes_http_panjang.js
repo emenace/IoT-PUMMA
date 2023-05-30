@@ -17,7 +17,8 @@ routers.get('/panjang/list/:time', panjang_http.get_byTime_list);
 routers.get('/panjang/interval', panjang_http.get_byDate_obj);
 
 // Send image
-routers.get('/panjang/image/', panjang_http.get_lastImage)
+routers.get('/panjang/image/', panjang_http.get_lastImage);
+//routers.get('/panjang/image_test/', panjang_http.get_lastImages);
 
 // Data as List
 

@@ -1,3 +1,4 @@
+const path = require('path');
 const { Pool } = require('pg');
 const { off } = require('process');
 const dbase_rest = new Pool({
@@ -177,8 +178,14 @@ module.exports = {
 
     //////////////////////// IMAGE ///////////////////////////
     
-    async get_lastImage(req, res){
+    async get_lastImage_old(req, res){
         res.status(200),
         res.sendfile("src/petengoran/image/petengoran.png")
+    },
+
+    async get_lastImage(req, res){
+        res.status(200),
+        res.sendFile('petengoran.png', {root : path.join(__dirname, '../image')})
+        console.log(`[REST-API Petengoran] GET DATA IMAGE`);
     },
 }

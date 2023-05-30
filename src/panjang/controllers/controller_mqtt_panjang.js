@@ -190,24 +190,30 @@ module.exports = {
             let ts = new Date(Date.now());
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
             const itemCount = fs.readdirSync('src/panjang/image/').length;
-            if (itemCount <= 50){
-                fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
-                    if(err) {
-                        return console.log(err);
-                    }
-                });
-            } else {
-                var result = findRemoveSync('src/panjang/image/', {
-                    age: { seconds: 3600 },
-                    extensions: '.png',
-                    limit: 50
-                });
-                fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
-                    if(err) {
-                        return console.log(err);
-                    }
-                });
-            }   
+            fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+            });
+            
+            // if (itemCount <= 50){
+            //     fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+            //         if(err) {
+            //             return console.log(err);
+            //         }
+            //     });
+            // } else {
+            //     var result = findRemoveSync('src/panjang/image/', {
+            //         age: { seconds: 3600 },
+            //         extensions: '.png',
+            //         limit: 50
+            //     });
+            //     fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+            //         if(err) {
+            //             return console.log(err);
+            //         }
+            //     });
+            // }   
         }
     }
 }
