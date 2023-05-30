@@ -188,14 +188,22 @@ module.exports = {
             });
 
             let ts = new Date(Date.now());
+
+            var monthFolder = ((ts.getMonth()+1));
+            !fs.existsSync(`src/panjang/image/${monthFolder}`) && fs.mkdirSync(`src/panjang/image/${monthFolder}`);
+
+            var dateFolder = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear());
+            !fs.existsSync(`src/panjang/image/${monthFolder}/${dateFolder}`) && fs.mkdirSync(`src/panjang/image/${monthFolder}/${dateFolder}`);
+
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
-            const itemCount = fs.readdirSync('src/panjang/image/').length;
-            fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+           
+            fs.writeFileSync(`src/panjang/image/${monthFolder}/${dateFolder}/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
                 if(err) {
                     return console.log(err);
                 }
             });
             
+            // const itemCount = fs.readdirSync('src/panjang/image/').length;
             // if (itemCount <= 50){
             //     fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
             //         if(err) {

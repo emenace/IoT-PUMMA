@@ -185,14 +185,22 @@ module.exports = {
             });
 
             let ts = new Date(Date.now());
+
+            var monthFolder = ((ts.getMonth()+1));
+            !fs.existsSync(`src/petengoran/image/${monthFolder}`) && fs.mkdirSync(`src/petengoran/image/${monthFolder}`);
+
+            var dateFolder = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear());
+            !fs.existsSync(`src/petengoran/image/${monthFolder}/${dateFolder}`) && fs.mkdirSync(`src/petengoran/image/${monthFolder}/${dateFolder}`);
+
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
-            const itemCount = fs.readdirSync('src/petengoran/image/').length;
-            fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
+            
+            fs.writeFileSync(`src/petengoran/image/${monthFolder}/${dateFolder}/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
                 if(err) {
                     return console.log(err);
                 }
             });
             
+            //const itemCount = fs.readdirSync('src/petengoran/image/').length;
             // if (itemCount <= 50){
             //     fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
             //         if(err) {
