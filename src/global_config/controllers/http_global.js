@@ -28,7 +28,8 @@ const pool_panjang = new Pool({
 });
 
 require('dotenv').config();
-
+pool_panjang.connect();
+pool_petengoran.connect();
 module.exports = {
 
     // HTTP HANDLING
