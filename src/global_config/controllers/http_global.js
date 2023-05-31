@@ -37,74 +37,49 @@ module.exports = {
 
     // Get Device Status
     async deviceStatus(req, res){
-        var data = [];
-        pool_panjang.connect(async function (err, client, done){
+        try {
+            var data = [];
+            // await pool_panjang.connect();
+            // await pool_petengoran.connect();
+
             getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
-            waterlevel = getDB_panjang.rows[0].waterlevel;
-            dateTimeDB1 = getDB_panjang.rows[0].datetime;
-            feedLatency1 = getDB_panjang.rows[0].feedlatency;
-
-            //console.log(feedLatency1);
-
-            const date2 = new Date(dateTimeDB1);
-   
-            const timestamp = (moment(dateTimeDB1).locale('id').format());
-            
-            var time1 = date2.toLocaleTimeString("es-ES");
-            var date1 = date2.toLocaleDateString("en-CA");
+            getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
 
             status_panjang = {
                 sensor : "Sonar",
                 location : "Panjang, Krakatau",
                 country : "Indonesia",
                 provider : "Telkomsel",
-                lastWater : waterlevel,
-                lastDateTime : dateTimeDB1,
-                feedLatency : feedLatency1,
-                lastDate : date1,
-                lastTime : time1,
-                timestamp : timestamp,
-                
-            }
-            pool_petengoran.connect(async function (err, client, done){
-                getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
-                waterlevel = getDB_petengoran.rows[0].waterlevel;
-                dateTimeDB = getDB_petengoran.rows[0].datetime;
-                feedLatency = getDB_petengoran.rows[0].feedlatency;
+                lastWater : getDB_panjang.rows[0].waterlevel,
+                lastDateTime : getDB_panjang.rows[0].datetime,
+                feedLatency : getDB_panjang.rows[0].feedlatency,
+                lastDate : new Date(getDB_panjang.rows[0].datetime).toLocaleDateString("en-CA"),
+                lastTime : new Date(getDB_panjang.rows[0].datetime).toLocaleTimeString("es-ES"),
+                timestamp : (moment(getDB_panjang.rows[0].datetime).locale('id').format()),
+            };
 
-                //console.log(feedLatency);
-
-                const date2 = new Date(dateTimeDB);
-
-                moment.locale('id');
-                const timestamp = (moment(dateTimeDB).locale('id').format());
-                
-                
-                var time = date2.toLocaleTimeString("es-ES");
-                var date = date2.toLocaleDateString("en-CA");
-
-                status_petengoran = {
-                    sensor : "Sonar",
-                    location : "Mangrove Petengoran, Gebang",
-                    country : "Indonesia",
-                    provider : "Telkomsel",
-                    lastWater : waterlevel,
-                    lastDateTime : dateTimeDB,
-                    feedLatency : feedLatency,
-                    lastDate : date,
-                    lastTime : time,
-                    timestamp : timestamp,
-                }           
-                data.push(status_petengoran);
-                
-    
-                // SEND DATA TO API
-                res.json(data)
-                
-            });
             data.push(status_panjang);
+
+            status_petengoran = {
+                sensor : "Sonar",
+                location : "Mangrove Petengoran, Gebang",
+                country : "Indonesia",
+                provider : "Telkomsel",
+                lastWater : getDB_petengoran.rows[0].waterlevel,
+                lastDateTime : getDB_petengoran.rows[0].datetime,
+                feedLatency : getDB_petengoran.rows[0].feedlatency,
+                lastDate : new Date(getDB_petengoran.rows[0].datetime).toLocaleDateString("en-CA"),
+                lastTime : new Date(getDB_petengoran.rows[0].datetime).toLocaleTimeString("es-ES"),
+                timestamp : (moment(getDB_petengoran.rows[0].datetime).locale('id').format()),
+            };
             
-        });
-        
+            data.push(status_petengoran);
+
+            await res.json(data)
+            console.log(`[REST-API GLOBAL] GET Status`);
+
+        } catch (err){
+            console.log(err);
+        }
     },
 }
