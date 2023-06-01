@@ -12,6 +12,7 @@ router.get('/petengoran/pageCount/:count', petengoran_http.get_paginationCount);
 //Record of data by time
 router.get('/petengoran/time/:time', petengoran_http.get_byTime_obj); // route request to respond last day data
 router.get('/petengoran/list/:time', petengoran_http.get_byTime_list);
+router.get('/petengoran/all/:time', petengoran_http.get_byTime_list_all);
 
 //Record of data by date
 router.get('/petengoran/interval', petengoran_http.get_byDate_obj);

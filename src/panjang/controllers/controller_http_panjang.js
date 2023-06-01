@@ -118,7 +118,7 @@ module.exports = {
         time = req.params.time;
         timer = req.query.timer;
         dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
+        dbase_rest.connect(function (err, client){
             if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime, ${dataColumn} as data
@@ -143,7 +143,6 @@ module.exports = {
                 res.json({
                     message:"Invalid Timer. Use second, minute, hour, day",
                 })
-                done();
             };
             
         });
@@ -155,7 +154,7 @@ module.exports = {
         dateStart = req.query.start;
         dateEnd = req.query.end;  
         dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
+        dbase_rest.connect(function (err, client){
             if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
             FROM mqtt_panjang_stored WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
@@ -179,15 +178,50 @@ module.exports = {
     },
 
     //////////////////////// IMAGE ///////////////////////////
-    
-    async get_lastImage_old(req, res){
-        res.status(200),
-        res.sendfile("src/panjang/image/panjang.png")
-    },
 
     async get_lastImage(req, res){
         res.status(200),
         res.sendFile('panjang.png', {root : path.join(__dirname, '../image')})
         console.log(`[REST-API Panjang] GET DATA IMAGE`);
+    },
+
+    //////////////////////// UNDER DEVELOPMENT ///////////////////////////
+
+    async get_byTime_list_all(req, res){
+        var data = [];
+        time = req.params.time;
+        timer = req.query.timer;
+        //dataColumn = req.query.data;
+        dbase_rest.connect(function (err, client){
+            if (err) throw err;
+            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
+                dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel
+                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: `Error Use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].waterlevel, result.rows[i].voltage, result.rows[i].temperature, 
+                            result.rows[i].forecast30, result.rows[i].forecast300, 
+                            result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
+                    }
+                    res.json({
+                        info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
+                        count:result.rowCount,
+                        result: data.reverse(),
+                    })
+                    console.log(`[REST-API Panjang] GET ALL DATA FOR ${time} ${timer} AS LIST`);
+                });
+            }else {
+                res.status(404);
+                res.json({
+                    message:"Invalid Timer. Use second, minute, hour, day",
+                })
+            };
+            
+        });
     },
 }
