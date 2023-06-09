@@ -250,7 +250,7 @@ module.exports = {
                     if (err) {
                         console.log(err.message);
                         res.status(404);
-                        res.json({msg: `Error`});
+                        res.json({msg: err.message});
                     }
                     for (i = 0; i<result.rowCount; i++){
                         const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
