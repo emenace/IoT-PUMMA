@@ -1,5 +1,7 @@
 const dbase_mqtt = require('../configs/database_panjang');
 const mqtt_connect = require('../../global_config/mqtt_config');
+const {auth} = require('../../global_config/controllers/google_api');
+const { google } = require('googleapis');
 const moment = require('moment-timezone');
 const fs = require('fs');
 const path = require('path');
@@ -202,6 +204,35 @@ module.exports = {
                     return console.log(err);
                 }
             });
+
+            // UPLOAD TO GOOGLE DRIVE
+            const driveService = google.drive({
+                version : 'v3', auth
+            });
+
+            const metadata = {
+                'name' : `${datetimes}_panjang.png`,
+                'parents' : ['15uZzgcRK1koobueyxjOAqNuCR5OXfphe']
+            }
+            
+            let media = {
+                MimeType: 'image/png',
+                body : fs.createReadStream(`src/panjang/image/panjang.png`)
+            }
+
+            let response = await driveService.files.create({
+                resource : metadata, 
+                media : media,
+                fields : 'id'
+            })
+        
+            switch(response.status){
+                case 200 : 
+                    console.log('done ', response.data.id ) 
+                    break;
+            }
+            
+
             
             // const itemCount = fs.readdirSync('src/panjang/image/').length;
             // if (itemCount <= 50){

@@ -266,4 +266,46 @@ module.exports = {
                     console.log(`[REST-API Petengoran] GET ALL DATA WITH TIME ${time} AND INTERVAL 1 Minute AS LIST`);
                 });
     },
+
+    async get_all_interval_date(req, res){
+        var data = [];
+        starts = req.query.start;
+        end = req.query.end;
+        // interval = req.query.interval;
+                
+                dbase_rest.query(`
+
+                with dateRange as(
+                    SELECT min(datetime) as first_date, max(datetime) as last_date
+                    FROM mqtt_petengoran_stored
+                    WHERE datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
+                )
+                    
+                select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_petengoran_stored
+                where datetime in(
+                    select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
+                    from dateRange
+                )
+                order by datetime desc
+
+                `, function(err, result){
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: err.message});
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].waterlevel, result.rows[i].voltage, result.rows[i].temperature, 
+                            result.rows[i].forecast30, result.rows[i].forecast300, 
+                            result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
+                    }
+                    res.json({
+                        info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
+                        count:result.rowCount,
+                        result: data.reverse(),
+                    })
+                    console.log(`[REST-API Petengoran] GET ALL DATA BETWEEN ${starts} AND ${end}`);
+                });
+    },
 }

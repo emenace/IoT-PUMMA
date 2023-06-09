@@ -1,7 +1,10 @@
 const dbase_mqtt = require('../configs/database_petengoran');
 const mqtt_connect = require('../../global_config/mqtt_config');
+const {auth} = require('../../global_config/controllers/google_api');
+const { google } = require('googleapis');
 const moment = require('moment-timezone');
 const fs = require('fs');
+const path = require('path');
 const findRemoveSync = require('find-remove')
 const lsq = require('least-squares'); //Least square method to forecasting
 
@@ -200,6 +203,33 @@ module.exports = {
                 }
             });
             
+            // UPLOAD TO GOOGLE DRIVE
+            const driveService = google.drive({
+                version : 'v3', auth
+            });
+
+            const metadata = {
+                'name' : `${datetimes}_petengoran.png`,
+                'parents' : ['1m1bqZAhEYvJ1jqn5pYYI2r7r5mQlJAL7']
+            }
+            
+            let media = {
+                MimeType: 'image/png',
+                body : fs.createReadStream(`src/petengoran/image/petengoran.png`)
+            }
+
+            let response = await driveService.files.create({
+                resource : metadata, 
+                media : media,
+                fields : 'id'
+            })
+        
+            switch(response.status){
+                case 200 : 
+                    console.log('done ', response.data.id ) 
+                    break;
+            }
+
             //const itemCount = fs.readdirSync('src/petengoran/image/').length;
             // if (itemCount <= 50){
             //     fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
