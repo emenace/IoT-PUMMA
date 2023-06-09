@@ -118,8 +118,8 @@ module.exports = {
         time = req.params.time;
         timer = req.query.timer;
         dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client){
-            if (err) throw err;
+        // dbase_rest.connect(function (err, client){
+        //     if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime, ${dataColumn} as data
                 FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
@@ -145,7 +145,7 @@ module.exports = {
                 })
             };
             
-        });
+        // });
     },
 
     //////////////////////// BY DATE ///////////////////////////
@@ -154,8 +154,8 @@ module.exports = {
         dateStart = req.query.start;
         dateEnd = req.query.end;  
         dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client){
-            if (err) throw err;
+        // dbase_rest.connect(function (err, client){
+        //     if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
             FROM mqtt_panjang_stored WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
@@ -174,7 +174,7 @@ module.exports = {
                 })
                 console.log(`[REST-API Panjang] GET ${dataColumn} DATA FROM ${dateStart} TO ${dateEnd} AS OBJECT`);
             });          
-        });
+        // });
     },
 
     //////////////////////// IMAGE ///////////////////////////
@@ -192,8 +192,8 @@ module.exports = {
         time = req.params.time;
         timer = req.query.timer;
         //dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client){
-            if (err) throw err;
+        // dbase_rest.connect(function (err, client){
+        //     if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel
                 FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
@@ -222,6 +222,47 @@ module.exports = {
                 })
             };
             
-        });
+        // });
+    },
+
+    async get_all_interval(req, res){
+        var data = [];
+        time = req.query.time;
+        // interval = req.query.interval;
+                
+                dbase_rest.query(`
+
+                with dateRange as(
+                    SELECT min(datetime) as first_date, max(datetime) as last_date
+                    FROM mqtt_panjang
+                    WHERE datetime >= now() - Interval '${time}'
+                )
+                    
+                select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_panjang
+                where datetime in(
+                    select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
+                    from dateRange
+                )
+                order by datetime desc
+
+                `, function(err, result){
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: `Error`});
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].waterlevel, result.rows[i].voltage, result.rows[i].temperature, 
+                            result.rows[i].forecast30, result.rows[i].forecast300, 
+                            result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
+                    }
+                    res.json({
+                        info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
+                        count:result.rowCount,
+                        result: data.reverse(),
+                    })
+                    console.log(`[REST-API Panjang] GET ALL DATA WITH TIME ${time} AND INTERVAL 1 Minute AS LIST`);
+                });
     },
 }

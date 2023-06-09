@@ -38,13 +38,42 @@ module.exports = {
 
     // Get Device Status
     async deviceStatus(req, res){
+        
         try {
             var data = [];
-            // await pool_panjang.connect();
-            // await pool_petengoran.connect();
+            var fl_pjg;
+            var fl_ptg;
+            var feedLatency_pjg;
+            var feedLatency_ptg;
 
             getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
             getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+
+            feedLatency_pjg = getDB_panjang.rows[0].feedlatency;
+            feedLatency_ptg = getDB_petengoran.rows[0].feedlatency;
+            lastDate_pjg = getDB_panjang.rows[0].datetime;
+            lastDate_ptg = getDB_petengoran.rows[0].datetime
+
+            var now = new Date();
+            
+            const msBetweenDates_ptg = (Math.abs(lastDate_ptg.getTime() - now.getTime()));
+            const hoursBetweenDates_ptg = msBetweenDates_ptg / (60 * 60 * 1000);
+            console.log(hoursBetweenDates_ptg.toFixed(0));
+
+            const msBetweenDates_pjg = (Math.abs(lastDate_pjg.getTime() - now.getTime()));
+            const hoursBetweenDates_pjg = msBetweenDates_pjg / (60 * 60 * 1000);
+            console.log(hoursBetweenDates_pjg.toFixed(0));
+
+            if (hoursBetweenDates_ptg.toFixed(0) > 24){
+                feedLatency_ptg = "INACTIVE";
+            }
+            if (hoursBetweenDates_pjg.toFixed(0) > 24){
+                feedLatency_ptg = "INACTIVE";
+            }
+            
+
+            // if (fl_pjg > 86400000 ) {feedLatency_pjg = 9999} else {feedLatency_pjg=fl_pjg}
+            // if (fl_ptg > 86400000 ) {feedLatency_ptg = "Inactive"} else {feedLatency_pjg=fl_ptg}
 
             status_panjang = {
                 sensor : "Sonar",
@@ -53,10 +82,10 @@ module.exports = {
                 provider : "Telkomsel",
                 lastWater : getDB_panjang.rows[0].waterlevel,
                 lastDateTime : getDB_panjang.rows[0].datetime,
-                feedLatency : getDB_panjang.rows[0].feedlatency,
-                lastDate : new Date(getDB_panjang.rows[0].datetime).toLocaleDateString("en-CA"),
-                lastTime : new Date(getDB_panjang.rows[0].datetime).toLocaleTimeString("es-ES"),
-                timestamp : (moment(getDB_panjang.rows[0].datetime).locale('id').format()),
+                feedLatency : feedLatency_pjg,
+                lastDate : new Date(lastDate_pjg).toLocaleDateString("en-CA"),
+                lastTime : new Date(lastDate_pjg).toLocaleTimeString("es-ES"),
+                timestamp : (moment(lastDate_pjg).locale('id').format()),
             };
 
             data.push(status_panjang);
@@ -68,10 +97,10 @@ module.exports = {
                 provider : "Telkomsel",
                 lastWater : getDB_petengoran.rows[0].waterlevel,
                 lastDateTime : getDB_petengoran.rows[0].datetime,
-                feedLatency : getDB_petengoran.rows[0].feedlatency,
-                lastDate : new Date(getDB_petengoran.rows[0].datetime).toLocaleDateString("en-CA"),
-                lastTime : new Date(getDB_petengoran.rows[0].datetime).toLocaleTimeString("es-ES"),
-                timestamp : (moment(getDB_petengoran.rows[0].datetime).locale('id').format()),
+                feedLatency : feedLatency_ptg,
+                lastDate : new Date(lastDate_ptg).toLocaleDateString("en-CA"),
+                lastTime : new Date(lastDate_ptg).toLocaleTimeString("es-ES"),
+                timestamp : (moment(lastDate_ptg).locale('id').format()),
             };
             
             data.push(status_petengoran);

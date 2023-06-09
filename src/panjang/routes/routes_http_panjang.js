@@ -13,6 +13,7 @@ routers.get('/panjang/pageCount/:count', panjang_http.get_paginationCount); // r
 routers.get('/panjang/time/:time', panjang_http.get_byTime_obj); // route request to respond last day data
 routers.get('/panjang/list/:time', panjang_http.get_byTime_list);
 routers.get('/panjang/all/:time', panjang_http.get_byTime_list_all);
+routers.get('/panjang/interval/', panjang_http.get_all_interval);
 
 //Record of data by date
 routers.get('/panjang/interval', panjang_http.get_byDate_obj);
