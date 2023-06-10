@@ -16,7 +16,7 @@ routers.get('/panjang/all/:time', panjang_http.get_byTime_list_all);
 routers.get('/panjang/interval/', panjang_http.get_all_interval);
 
 //Record of data by date
-routers.get('/panjang/interval', panjang_http.get_byDate_obj);
+routers.get('/panjang/interval-date', panjang_http.get_byDate_obj);
 routers.get('/panjang/intervalDate/', panjang_http.get_all_interval_date);
 
 // Send image

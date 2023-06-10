@@ -16,7 +16,7 @@ router.get('/petengoran/all/:time', petengoran_http.get_byTime_list_all);
 router.get('/petengoran/interval/', petengoran_http.get_all_interval);
 
 //Record of data by date
-router.get('/petengoran/interval', petengoran_http.get_byDate_obj);
+router.get('/petengoran/interval-date', petengoran_http.get_byDate_obj);
 router.get('/petengoran/intervalDate/', petengoran_http.get_all_interval_date);
 
 // Send image
