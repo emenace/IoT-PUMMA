@@ -227,24 +227,40 @@ module.exports = {
 
     async get_all_interval(req, res){
         var data = [];
-        time = req.query.time;
-        // interval = req.query.interval;
-    
+        time = req.query.time; 
+
+                // with dateRange as(
+                //     SELECT min(datetime) as first_date, max(datetime) as last_date
+                //     FROM mqtt_petengoran
+                //     WHERE datetime >= now() - Interval '${time}'
+                // )
+                    
+                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_petengoran
+                // where datetime in(
+                //     select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
+                //     from dateRange
+                // )
+                // order by datetime desc
             
+                var interval = 120 //seconds (2 minute)
                 dbase_rest.query(`
 
-                with dateRange as(
-                    SELECT min(datetime) as first_date, max(datetime) as last_date
-                    FROM mqtt_petengoran
-                    WHERE datetime >= now() - Interval '${time}'
-                )
-                    
-                select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_petengoran
-                where datetime in(
-                    select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
-                    from dateRange
-                )
-                order by datetime desc
+                SELECT  
+                to_timestamp(floor((extract('epoch' from datetime) / ${interval} )) * ${interval}) 
+                AT TIME ZONE 'UTC' as datetime,
+                COUNT(DISTINCT waterlevel),
+                    ROUND(AVG(waterlevel)::numeric, 0 ) as waterlevel,
+                    ROUND(AVG(voltage)::numeric, 0 ) as voltage,
+                    ROUND(AVG(temperature)::numeric, 0 ) as temperature,
+                    ROUND(AVG(forecast30)::numeric, 0 ) as forecast30,
+                    ROUND(AVG(forecast300)::numeric, 0 ) as forecast300,
+                    ROUND(AVG(rms)::numeric, 0 ) as rms,
+                    ROUND(AVG(threshold)::numeric, 0 ) as threshold,
+                    ROUND(AVG(alertlevel)::numeric, 0 ) as alertlevel	
+                FROM mqtt_petengoran 
+                where datetime >= now() - Interval '${time}'
+                GROUP BY 1 
+                order by 1 desc
 
                 `, function(err, result){
                     if (err) {
@@ -271,22 +287,39 @@ module.exports = {
         var data = [];
         starts = req.query.start;
         end = req.query.end;
-        // interval = req.query.interval;
+
+                // with dateRange as(
+                //     SELECT min(datetime) as first_date, max(datetime) as last_date
+                //     FROM mqtt_petengoran_stored
+                //     WHERE datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
+                // )
+                    
+                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_petengoran_stored
+                // where datetime in(
+                //     select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
+                //     from dateRange
+                // )
+                // order by datetime desc
                 
+                var interval = 120 //seconds (2 minute)
                 dbase_rest.query(`
 
-                with dateRange as(
-                    SELECT min(datetime) as first_date, max(datetime) as last_date
-                    FROM mqtt_petengoran_stored
-                    WHERE datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
-                )
-                    
-                select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_petengoran_stored
-                where datetime in(
-                    select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
-                    from dateRange
-                )
-                order by datetime desc
+                SELECT  
+                to_timestamp(floor((extract('epoch' from datetime) / ${interval} )) * ${interval}) 
+                AT TIME ZONE 'UTC' as datetime,
+                COUNT(DISTINCT waterlevel),
+                    ROUND(AVG(waterlevel)::numeric, 0 ) as waterlevel,
+                    ROUND(AVG(voltage)::numeric, 0 ) as voltage,
+                    ROUND(AVG(temperature)::numeric, 0 ) as temperature,
+                    ROUND(AVG(forecast30)::numeric, 0 ) as forecast30,
+                    ROUND(AVG(forecast300)::numeric, 0 ) as forecast300,
+                    ROUND(AVG(rms)::numeric, 0 ) as rms,
+                    ROUND(AVG(threshold)::numeric, 0 ) as threshold,
+                    ROUND(AVG(alertlevel)::numeric, 0 ) as alertlevel	
+                FROM mqtt_petengoran_stored
+                where WHERE datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
+                GROUP BY 1 
+                order by 1 desc
 
                 `, function(err, result){
                     if (err) {

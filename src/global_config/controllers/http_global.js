@@ -58,11 +58,11 @@ module.exports = {
             
             const msBetweenDates_ptg = (Math.abs(lastDate_ptg.getTime() - now.getTime()));
             const hoursBetweenDates_ptg = msBetweenDates_ptg / (60 * 60 * 1000);
-            console.log(hoursBetweenDates_ptg.toFixed(0));
+            console.log('[Status REST-API PETENGORAN] ' + hoursBetweenDates_ptg.toFixed(0) + ' Hour from last data');
 
             const msBetweenDates_pjg = (Math.abs(lastDate_pjg.getTime() - now.getTime()));
             const hoursBetweenDates_pjg = msBetweenDates_pjg / (60 * 60 * 1000);
-            console.log(hoursBetweenDates_pjg.toFixed(0));
+            console.log('[Status REST-API PANJANG] ' + hoursBetweenDates_pjg.toFixed(0) + ' Hour from last data');
 
             if (hoursBetweenDates_ptg.toFixed(0) > 24){
                 feedLatency_ptg = "INACTIVE";
