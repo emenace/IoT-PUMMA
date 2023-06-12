@@ -243,7 +243,7 @@ module.exports = {
                 // )
                 // order by datetime desc
 
-                var interval = 120 //seconds (2 minute)
+                var interval = 300 //seconds (5 minute)
                 dbase_rest.query(`             
 
                 SELECT  
@@ -302,7 +302,7 @@ module.exports = {
                 // )
                 // order by datetime desc
         
-                var interval = 120 //seconds (2 minute)
+                var interval = 3600 //seconds (1 hour)
                 dbase_rest.query(`
 
                 SELECT  
