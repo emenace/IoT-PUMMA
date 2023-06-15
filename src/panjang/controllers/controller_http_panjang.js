@@ -1,249 +1,162 @@
-const dbase_rest = require('../configs/database_panjang');
+const path = require('path');
+const moment = require('moment');
+const { Pool } = require('pg');
+const { off } = require('process');
+const { start } = require('repl');
+const dbase_rest = new Pool({
+    host:process.env.DB_HOST,
+    port:process.env.DB_PORT,
+    user:"user_panjang",
+    password: "pwd123",
+    database: process.env.DB_PANJANG
+})
+dbase_rest.connect();
+
 require('dotenv').config();
 require('fs');
 
 module.exports = {
 
-    // HTTP HANDLING
-    // This code is based on routes  ../src/canti/controllers/controller_mqtt_canti.js
-    // If want to add new API, dont forget to add new routes
+    //////////////////////// RAW DATA ///////////////////////////
 
-    
-    // Respond request to give latest 100 data
-    getDataPanjang(req,res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query("SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100", function(err, result){
-                if (err) throw (err);
-                res.status(200);
-                res.send({
-                    count:result.rowCount,
-                    result: result.rows
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
+    async get_100Data(req,res){
+        data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
+            forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
+            FROM mqtt_panjang ORDER BY datetime DESC LIMIT 100`);
+        
+        res.status(200);
+        res.send({
+            count:data.rowCount,
+            result:data.rows.reverse(),
+        })
+
+        console.log("[REST-API Panjang] GET 100 Data");
     },
 
-    // Respond request to give latest data by count
-    getDataPanjangByID(req,res){
-        let count = parseInt(req.params.count);
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_panjang ORDER BY datetime DESC LIMIT ${count}`, function(err, result){
-                if (err) throw (err);
-                res.json({
-                    count:result.rowCount,
-                    result: result.rows
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
+    async get_countData(req,res){
+        var count = parseInt(req.params.count);
+        data = await dbase_rest.query(`SELECT datetime, time, date, waterlevel, voltage, temperature, 
+            forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
+            FROM mqtt_panjang ORDER BY datetime DESC LIMIT ${count}`);
+        res.status(200);
+        res.send({
+            count:data.rowCount,
+            result:data.rows.reverse(),
+        })
+
+        console.log(`[REST-API Panjang] GET ${count} Data`);
+        
     },
 
-    // Respond request to give last 1 day data
-    getDayPanjang1(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT * FROM mqtt_panjang WHERE datetime >= now() - Interval '1' DAY ORDER BY date DESC, time DESC`, function(err, result){
-                if (err) throw (err);
-                res.json({
-                    count:result.rowCount,
-                    result: result.rows.reverse()
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
+    //////////////////////// PAGINATED  ///////////////////////////
 
-    // Respond request to give last 3 day data
-    getDayPanjang3(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '3' DAY ORDER BY date DESC, time DESC`, function(err, result){
-                if (err) throw (err);
-                var perPage = 100;
-                var totalRow = result.rowCount ;
-                var totalPage = Math.ceil(totalRow / perPage);
-
-                res.json({
-                    count:result.rowCount,
-                    totalPage:totalPage,
-                    message:"Data too big. please use 3 days pagination endpoint",
-                    endpoint: "/panjang/3days/:page"
-                })
-
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
-    
-    // Respond request to give last 7 day data
-    getDayPanjang7(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY date DESC, time DESC`, function(err, result){
-                if (err) throw (err);
-                var perPage = 100;
-                var totalRow = result.rowCount ;
-                var totalPage = Math.ceil(totalRow / perPage);
-
-                res.json({
-                    count:result.rowCount,
-                    totalPage:totalPage,
-                    message:"Data too big. please use 7 days pagination endpoint",
-                    endpoint: "/panjang/7days/:page"
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
-
-    panjangPagination(req, res){
+    async get_pagination(req, res){
         var perPage = 100;
         var page = req.params.page;
         var offset = (page -  1) * perPage;
     
-        dbase_rest.connect(function (err, client, done){
-        dbase_rest.query(`SELECT count(*) as total FROM mqtt_panjang`, function(err, result){
-            if (err) throw err;
-            var totalRow = result.rows[0].total;
-            var totalPage = Math.ceil(totalRow / perPage);            
-            dbase_rest.query(`SELECT * from mqtt_panjang LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
-                if (err) throw err;
-                res.json({
-                    totalData:totalRow,
-                    page:page,
-                    totalPage:totalPage,
-                    result:result.rows.reverse()                    
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-        });
-   },
+        countData = await dbase_rest.query(`SELECT count(*) as total FROM mqtt_panjang`);
+        var totalRow = countData.rows[0].total;
+        var totalPage = Math.ceil(totalRow/perPage);
 
-    getDayPanjang7page(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC`, function(err, result){
-                if (err) throw (err);
+        data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
+        forecast30, forecast300, rms, threshold, alertlevel, feedlatency
+        FROM mqtt_panjang LIMIT ${perPage} OFFSET ${offset}`)
 
-                var perPage = 100;
-                var page = req.params.page;
-                var offset = (page -  1) * perPage;
-                var totalRow = result.rowCount;
-                var totalPage = Math.ceil(totalRow / perPage);
-                var counts = result.rowCount;
-
-                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime >= now() - Interval '7' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
-                    res.json({
-                        count:counts,
-                        totalPage:totalPage,
-                        page:page,
-                        result:result.rows.reverse()
-                    })
-                });
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
+        res.json({
+            totalData:totalRow,
+            page:page,
+            totalPage:totalPage,
+            result:data.rows.reverse()                    
+        })
+        console.log(`[REST-API Panjang] GET ALL DATA BY PAGE. PAGE ${page} OF ${totalPage}`);
     },
 
-    getDayPanjang3page(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT date FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC`, function(err, result){
-                if (err) throw (err);
-
-                var perPage = 100;
-                var page = req.params.page;
-                var offset = (page -  1) * perPage;
-                var totalRow = result.rowCount;
-                var totalPage = Math.ceil(totalRow / perPage);
-                var counts = result.rowCount;
-
-                dbase_rest.query(`SELECT *  FROM mqtt_panjang WHERE datetime > now() - Interval '3' DAY ORDER BY datetime DESC LIMIT ${perPage} OFFSET ${offset}`, function(err, result){
-                    res.json({
-                        count:counts,
-                        totalPage:totalPage,
-                        page:page,
-                        result:result.rows.reverse()
-                    })
-                });
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
+    async get_paginationCount(req, res){
+        data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
+        forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
+        FROM mqtt_panjang 
+        WHERE id IN (SELECT id FROM mqtt_panjang ORDER BY datetime DESC LIMIT ${req.params.count})
+        ORDER BY datetime DESC LIMIT ${req.query.limit} OFFSET ${req.query.offset}`)
+        res.send({
+            totalData:req.params.count,
+            count:data.rowCount,
+            result: data.rows.reverse()
+        })
+        console.log(`[REST-API Panjang] GET DATA BY PAGE. ${req.params.count} DATA WITH LIMIT ${req.query.limit} OFFSET ${req.query.offset} `);
     },
 
-    latestPagedData(req, res){
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`Select * from mqtt_panjang 
-            where id in (select id from mqtt_panjang order by datetime DESC limit ${req.params.count})
-            order by datetime DESC limit ${req.query.limit} offset ${req.query.offset}`, function(err, result){
-                console.log(req.params.count);
-                console.log(req.query.limit);
-                console.log(req.query.offset);
-                if (err) throw (err);
-                res.send({
-                    totalData:req.params.count,
-                    count:result.rowCount,
-                    result: result.rows.reverse()
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });
-        });
-    },
+    //////////////////////// BY TIME ///////////////////////////
 
-    // Get data by Hour
-    dataByHour(req, res){
+    async get_byTime_obj(req, res){
         time = req.params.time;
         timer = req.query.timer;
         dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
+        if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
+            dbase_rest.query(`SELECT datetime, ${dataColumn} as data
+            FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                if (err) {
+                    console.log(err.message);
+                    res.status(404);
+                    res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
+                } 
+                res.json({
+                    count:result.rowCount,
+                    result: result.rows.reverse(),
+                })
+                console.log(`[REST-API Panjang] GET ${dataColumn} FOR ${time} ${timer} AS OBJECT`);
+            });
+        }else {
+            res.status(404);
+            res.json({
+                message:"Invalid Timer. Use second, minute, hour, day",
+            })
+        };
+    },
+
+    async get_byTime_list(req, res){
+        var data = [];
+        time = req.params.time;
+        timer = req.query.timer;
+        dataColumn = req.query.data;
+        // dbase_rest.connect(function (err, client){
+        //     if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
+                dbase_rest.query(`SELECT datetime, ${dataColumn} as data
                 FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
                         res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
-                    } 
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].data])
+                    }
                     res.json({
                         count:result.rowCount,
-                        result: result.rows
+                        result: data.reverse(),
                     })
-                    console.log("[REST-API Panjang] Data Sent");
-                    done();
+                    console.log(`[REST-API Panjang] GET ${dataColumn} FOR ${time} ${timer} AS LIST`);
                 });
             }else {
                 res.status(404);
                 res.json({
                     message:"Invalid Timer. Use second, minute, hour, day",
                 })
-                done();
             };
             
-        });
+        // });
     },
 
-    // Get data by Date
-    dataByInterval(req, res){
+    //////////////////////// BY DATE ///////////////////////////
+
+    async get_byDate_obj(req, res){
         dateStart = req.query.start;
-        dateEnd = req.query.end;
+        dateEnd = req.query.end;  
         dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
+        // dbase_rest.connect(function (err, client){
+        //     if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
             FROM mqtt_panjang_stored WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
@@ -258,117 +171,175 @@ module.exports = {
                 };
                 res.json({
                     count:result.rowCount,
-                    result: result.rows
+                    result: result.rows.reverse(),
                 })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
+                console.log(`[REST-API Panjang] GET ${dataColumn} DATA FROM ${dateStart} TO ${dateEnd} AS OBJECT`);
             });          
-        });
+        // });
     },
 
-    list(req, res){
+    //////////////////////// IMAGE ///////////////////////////
+
+    async get_lastImage(req, res){
+        res.status(200),
+        res.sendFile('panjang.png', {root : path.join(__dirname, '../image')})
+        console.log(`[REST-API Panjang] GET DATA IMAGE`);
+    },
+
+    //////////////////////// UNDER DEVELOPMENT ///////////////////////////
+
+    async get_byTime_list_all(req, res){
         var data = [];
         time = req.params.time;
         timer = req.query.timer;
-        dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
+        //dataColumn = req.query.data;
+        // dbase_rest.connect(function (err, client){
+        //     if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime, ${dataColumn} as data
+                dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel
                 FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
-                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
+                        res.json({msg: `Error Use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
                     }
                     for (i = 0; i<result.rowCount; i++){
-                        data.push([result.rows[i].datetime, result.rows[i].data])
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].waterlevel, result.rows[i].voltage, result.rows[i].temperature, 
+                            result.rows[i].forecast30, result.rows[i].forecast300, 
+                            result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
                     }
                     res.json({
+                        info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
                         count:result.rowCount,
-                        result: data
+                        result: data.reverse(),
                     })
-                    console.log("[REST-API Panjang] Data Sent");
-                    done();
+                    console.log(`[REST-API Panjang] GET ALL DATA FOR ${time} ${timer} AS LIST`);
                 });
             }else {
                 res.status(404);
                 res.json({
                     message:"Invalid Timer. Use second, minute, hour, day",
                 })
-                done();
             };
             
-        });
+        // });
     },
 
+    async get_all_interval(req, res){
+        var data = [];
+        time = req.query.time;
+        
+                // with dateRange as(
+                //     SELECT min(datetime) as first_date, max(datetime) as last_date
+                //     FROM mqtt_panjang
+                //     WHERE datetime >= now() - Interval '${time}'
+                // )
+                    
+                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_panjang
+                // where datetime in(
+                //     select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
+                //     from dateRange
+                // )
+                // order by datetime desc
 
-    /// SEND ALL DATA BY PARAMETER
-    
-    // Get data by Hour
-    dataTime(req, res){
-        time = req.params.time;
-        timer = req.query.timer;
-        dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
-                dbase_rest.query(`SELECT datetime as utc, waterlevel, forecast30, forecast300, rms, threshold
-                FROM mqtt_panjang WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                var interval = 300 //seconds (5 minute)
+                dbase_rest.query(`             
+
+                SELECT  
+                to_timestamp(floor((extract('epoch' from datetime) / ${interval} )) * ${interval}) 
+                AT TIME ZONE 'UTC' as datetime,
+                COUNT(DISTINCT waterlevel),
+                    ROUND(AVG(waterlevel)::numeric, 0 ) as waterlevel,
+                    ROUND(AVG(voltage)::numeric, 0 ) as voltage,
+                    ROUND(AVG(temperature)::numeric, 0 ) as temperature,
+                    ROUND(AVG(forecast30)::numeric, 0 ) as forecast30,
+                    ROUND(AVG(forecast300)::numeric, 0 ) as forecast300,
+                    ROUND(AVG(rms)::numeric, 0 ) as rms,
+                    ROUND(AVG(threshold)::numeric, 0 ) as threshold,
+                    ROUND(AVG(alertlevel)::numeric, 0 ) as alertlevel	
+                FROM mqtt_panjang_stored 
+                where datetime >= now() - Interval '${time}'
+                GROUP BY 1 
+                order by 1 desc
+                
+                `, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
-                        res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
-                    } 
+                        res.json({msg: err.message});
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].waterlevel, result.rows[i].voltage, result.rows[i].temperature, 
+                            result.rows[i].forecast30, result.rows[i].forecast300, 
+                            result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
+                    }
                     res.json({
+                        info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
                         count:result.rowCount,
-                        result: result.rows
+                        result: data.reverse(),
                     })
-                    console.log("[REST-API Panjang] Data Sent");
-                    done();
+                    console.log(`[REST-API Panjang] GET ALL DATA WITH TIME ${time} AND INTERVAL 1 Minute AS LIST`);
                 });
-            }else {
-                res.status(404);
-                res.json({
-                    message:"Invalid Timer. Use second, minute, hour, day",
-                })
-                done();
-            };
-            
-        });
     },
 
-    // Get data by Date
-    dataDate(req, res){
-        dateStart = req.query.start;
-        dateEnd = req.query.end;
-        dataColumn = req.query.data;
-        dbase_rest.connect(function (err, client, done){
-            if (err) throw err;
-            dbase_rest.query(`SELECT datetime as utc, waterlevel, forecast30, forecast300, rms, threshold
-            FROM mqtt_panjang_stored WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
-                if (err) {
-                    console.log(err.message)
-                    res.status(404);
-                    res.json({msg: `Error no column ${dataColumn} or Error date format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use date format with YYYY-M-D. Example : 2023-3-28`});
-                };
-                if (result.rowCount===0) {
-                    res.status(404);
-                    res.send("Error date format. use YYYY-M-D Example : 2023-3-28")
-                    res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
-                };
-                res.json({
-                    count:result.rowCount,
-                    result: result.rows
-                })
-                console.log("[REST-API Panjang] Data Sent");
-                done();
-            });          
-        });
-    },
+    async get_all_interval_date(req, res){
+        var data = [];
+        starts = req.query.start;
+        end = req.query.end;
 
-    sendImage(req, res){
-        res.status(200),
-        res.sendfile("src/panjang/image/panjang.png")
+                // with dateRange as(
+                //     SELECT min(datetime) as first_date, max(datetime) as last_date
+                //     FROM mqtt_panjang_stored
+                //     WHERE datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
+                // )
+                    
+                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from mqtt_panjang_stored
+                // where datetime in(
+                //     select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
+                //     from dateRange
+                // )
+                // order by datetime desc
+        
+                var interval = 3600 //seconds (1 hour)
+                dbase_rest.query(`
+
+                SELECT  
+                to_timestamp(floor((extract('epoch' from datetime) / ${interval} )) * ${interval}) 
+                AT TIME ZONE 'UTC' as datetime,
+                COUNT(DISTINCT waterlevel),
+                    ROUND(AVG(waterlevel)::numeric, 0 ) as waterlevel,
+                    ROUND(AVG(voltage)::numeric, 0 ) as voltage,
+                    ROUND(AVG(temperature)::numeric, 0 ) as temperature,
+                    ROUND(AVG(forecast30)::numeric, 0 ) as forecast30,
+                    ROUND(AVG(forecast300)::numeric, 0 ) as forecast300,
+                    ROUND(AVG(rms)::numeric, 0 ) as rms,
+                    ROUND(AVG(threshold)::numeric, 0 ) as threshold,
+                    ROUND(AVG(alertlevel)::numeric, 0 ) as alertlevel	
+                FROM mqtt_panjang 
+                where datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
+                GROUP BY 1 
+                order by 1 desc
+
+                `, function(err, result){
+                    if (err) {
+                        console.log(err.message);
+                        res.status(404);
+                        res.json({msg: err.message});
+                    }
+                    for (i = 0; i<result.rowCount; i++){
+                        const timeGMT7 = (moment(result.rows[i].datetime).locale('id').format());
+                        data.push([timeGMT7, result.rows[i].waterlevel, result.rows[i].voltage, result.rows[i].temperature, 
+                            result.rows[i].forecast30, result.rows[i].forecast300, 
+                            result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
+                    }
+                    res.json({
+                        info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
+                        count:result.rowCount,
+                        result: data.reverse(),
+                    })
+                    console.log(`[REST-API Panjang] GET ALL DATA BETWEEN ${starts} AND ${end}`);
+                });
     },
 }

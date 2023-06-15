@@ -1,5 +1,7 @@
 const dbase_mqtt = require('../configs/database_panjang');
 const mqtt_connect = require('../../global_config/mqtt_config');
+const {auth} = require('../../global_config/controllers/google_api');
+const { google } = require('googleapis');
 const moment = require('moment-timezone');
 const fs = require('fs');
 const path = require('path');
@@ -188,7 +190,50 @@ module.exports = {
             });
 
             let ts = new Date(Date.now());
+
+            var monthFolder = ((ts.getMonth()+1));
+            !fs.existsSync(`src/panjang/image/${monthFolder}`) && fs.mkdirSync(`src/panjang/image/${monthFolder}`);
+
+            var dateFolder = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear());
+            !fs.existsSync(`src/panjang/image/${monthFolder}/${dateFolder}`) && fs.mkdirSync(`src/panjang/image/${monthFolder}/${dateFolder}`);
+
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
+           
+            // fs.writeFileSync(`src/panjang/image/${monthFolder}/${dateFolder}/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+            //     if(err) {
+            //         return console.log(err);
+            //     }
+            // });
+
+            // UPLOAD TO GOOGLE DRIVE
+            const driveService = google.drive({
+                version : 'v3', auth
+            });
+
+            const metadata = {
+                'name' : `${datetimes}_panjang.png`,
+                'parents' : ['15uZzgcRK1koobueyxjOAqNuCR5OXfphe']
+            }
+            
+            let media = {
+                MimeType: 'image/png',
+                body : fs.createReadStream(`src/panjang/image/panjang.png`)
+            }
+
+            let response = await driveService.files.create({
+                resource : metadata, 
+                media : media,
+                fields : 'id'
+            })
+        
+            switch(response.status){
+                case 200 : 
+                    console.log('done ', response.data.id ) 
+                    break;
+            }
+            
+
+            
             const itemCount = fs.readdirSync('src/panjang/image/').length;
             if (itemCount <= 50){
                 fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {

@@ -8,21 +8,21 @@ password = process.env.DB_PASSWORD
 
 const pool_canti = new Pool({
     host:host,
-    posrt:port,
+    port:port,
     user:user,
     password: password,
     database: process.env.DB_CANTI
 });
 const pool_petengoran = new Pool({
     host:host,
-    posrt:port,
+    port:port,
     user:user,
     password: password,
     database: process.env.DB_PETENGORAN
 });
 const pool_panjang = new Pool({
     host:host,
-    posrt:port,
+    port:port,
     user:user,
     password: password,
     database: process.env.DB_PANJANG

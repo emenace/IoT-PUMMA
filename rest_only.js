@@ -22,59 +22,8 @@ const api = express();
 api.use(bodyParser.urlencoded({ extended: false }))
 api.use(bodyParser.json())
 api.use(cors({
-    origin:['http://localhost/3000','*']
-}));
-
-// CHECK for database. create if database not exist
-const dbase_canti = require('./src/canti/configs/database_canti'); 
-dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti (
-  time TIME NOT NULL, 
-  date DATE NOT NULL, 
-  waterLevel FLOAT, 
-  voltage FLOAT, 
-  temperature FLOAT,
-  forecast30 FLOAT, 
-  forecast300 FLOAT,
-  rms FLOAT,
-  threshold FLOAT)
-  `, function(err, result){
-    console.log("Database Canti Connected");
-  });
-
-const dbase_petengoran = require('./src/petengoran/configs/database_petengoran'); 
-dbase_petengoran.query(`CREATE TABLE IF NOT EXISTS mqtt_petengoran (
-  id BIGINT NOT NULL PRIMARY KEY,
-  datetime TIMESTAMP NOT NULL,
-  time TIME NOT NULL, 
-  date DATE NOT NULL, 
-  waterLevel FLOAT, 
-  voltage FLOAT, 
-  temperature FLOAT,
-  forecast30 FLOAT, 
-  forecast300 FLOAT,
-  rms FLOAT,
-  threshold FLOAT)
-  `, function(err, result){
-    console.log("Database Petengoran Connected");
-  });
-       
-  const dbase_panjang = require('./src/panjang/configs/database_panjang'); 
-  dbase_panjang.query(`CREATE TABLE IF NOT EXISTS mqtt_panjang (
-    id BIGINT NOT NULL PRIMARY KEY,
-    datetime TIMESTAMP NOT NULL,
-    time TIME NOT NULL, 
-    date DATE NOT NULL, 
-    waterLevel FLOAT, 
-    voltage FLOAT, 
-    temperature FLOAT,
-    forecast30 FLOAT, 
-    forecast300 FLOAT,
-    rms FLOAT,
-    threshold FLOAT)
-    `, function(err, result){
-      console.log("Database Petengoran Connected");
-    });
-       
+    origin:['http://localhost/3000','*','http://pumma.isi-net.org/api','http://pumma.isi-net.org','localhost','/'] 
+}));     
 
 // API HANLDING FOR GLOBAL
 const global_appRoute = require('./src/global_config/routes/route_global');

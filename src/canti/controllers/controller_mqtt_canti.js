@@ -210,20 +210,20 @@ module.exports = {
                 DATA_ARRAY_RMS.push(result.rows[i].rms);
                 DATA_ARRAY_THRESHOLD.push(result.rows[i].threshold);
             } 
-            mqtt_connect.publish('pummamqtt/canti/chart/waterLevel',JSON.stringify(DATA_ARRAY_WATERLEVEL.reverse()), 
-                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            // mqtt_connect.publish('pummamqtt/canti/chart/waterLevel',JSON.stringify(DATA_ARRAY_WATERLEVEL.reverse()), 
+            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
        
-            mqtt_connect.publish('pummamqtt/canti/chart/forecast30',JSON.stringify(DATA_ARRAY_FORECAST30.reverse()), 
-                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            // mqtt_connect.publish('pummamqtt/canti/chart/forecast30',JSON.stringify(DATA_ARRAY_FORECAST30.reverse()), 
+            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
             
-            mqtt_connect.publish('pummamqtt/canti/chart/forecast300',JSON.stringify(DATA_ARRAY_FORECAST300.reverse()), 
-                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            // mqtt_connect.publish('pummamqtt/canti/chart/forecast300',JSON.stringify(DATA_ARRAY_FORECAST300.reverse()), 
+            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
            
-            mqtt_connect.publish('pummamqtt/canti/chart/rms',JSON.stringify(DATA_ARRAY_RMS.reverse()), 
-                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            // mqtt_connect.publish('pummamqtt/canti/chart/rms',JSON.stringify(DATA_ARRAY_RMS.reverse()), 
+            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
             
-            mqtt_connect.publish('pummamqtt/canti/chart/threshold',JSON.stringify(DATA_ARRAY_THRESHOLD.reverse()), 
-                {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            // mqtt_connect.publish('pummamqtt/canti/chart/threshold',JSON.stringify(DATA_ARRAY_THRESHOLD.reverse()), 
+            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
             
         });
 
