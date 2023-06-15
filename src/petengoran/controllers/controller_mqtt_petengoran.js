@@ -197,11 +197,11 @@ module.exports = {
 
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
             
-            fs.writeFileSync(`src/petengoran/image/${monthFolder}/${dateFolder}/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
-                if(err) {
-                    return console.log(err);
-                }
-            });
+            // fs.writeFileSync(`src/petengoran/image/${monthFolder}/${dateFolder}/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
+            //     if(err) {
+            //         return console.log(err);
+            //     }
+            // });
             
             // UPLOAD TO GOOGLE DRIVE
             const driveService = google.drive({
@@ -230,25 +230,25 @@ module.exports = {
                     break;
             }
 
-            //const itemCount = fs.readdirSync('src/petengoran/image/').length;
-            // if (itemCount <= 50){
-            //     fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
-            //         if(err) {
-            //             return console.log(err);
-            //         }
-            //     });
-            // } else {
-            //     var result = findRemoveSync('src/petengoran/image/', {
-            //         age: { seconds: 3600 },
-            //         extensions: '.png',
-            //         limit: 50
-            //     });
-            //     fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
-            //         if(err) {
-            //             return console.log(err);
-            //         }
-            //     });
-            // }   
+            const itemCount = fs.readdirSync('src/petengoran/image/').length;
+            if (itemCount <= 50){
+                fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            } else {
+                var result = findRemoveSync('src/petengoran/image/', {
+                    age: { seconds: 3600 },
+                    extensions: '.png',
+                    limit: 50
+                });
+                fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            }   
         }
     }
 }

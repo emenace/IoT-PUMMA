@@ -199,11 +199,11 @@ module.exports = {
 
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
            
-            fs.writeFileSync(`src/panjang/image/${monthFolder}/${dateFolder}/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
-                if(err) {
-                    return console.log(err);
-                }
-            });
+            // fs.writeFileSync(`src/panjang/image/${monthFolder}/${dateFolder}/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+            //     if(err) {
+            //         return console.log(err);
+            //     }
+            // });
 
             // UPLOAD TO GOOGLE DRIVE
             const driveService = google.drive({
@@ -234,25 +234,25 @@ module.exports = {
             
 
             
-            // const itemCount = fs.readdirSync('src/panjang/image/').length;
-            // if (itemCount <= 50){
-            //     fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
-            //         if(err) {
-            //             return console.log(err);
-            //         }
-            //     });
-            // } else {
-            //     var result = findRemoveSync('src/panjang/image/', {
-            //         age: { seconds: 3600 },
-            //         extensions: '.png',
-            //         limit: 50
-            //     });
-            //     fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
-            //         if(err) {
-            //             return console.log(err);
-            //         }
-            //     });
-            // }   
+            const itemCount = fs.readdirSync('src/panjang/image/').length;
+            if (itemCount <= 50){
+                fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            } else {
+                var result = findRemoveSync('src/panjang/image/', {
+                    age: { seconds: 3600 },
+                    extensions: '.png',
+                    limit: 50
+                });
+                fs.writeFile(`src/panjang/image/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            }   
         }
     }
 }
