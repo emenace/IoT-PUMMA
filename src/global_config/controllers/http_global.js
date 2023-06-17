@@ -8,8 +8,8 @@ password = process.env.DB_PASSWORD
 const pool_canti = new Pool({
     host:host,
     port:port,
-    user:user,
-    password: password,
+    user:"user_canti",
+    password: "pwd123",
     database: process.env.DB_CANTI
 });
 const pool_petengoran = new Pool({
@@ -30,6 +30,7 @@ const pool_panjang = new Pool({
 require('dotenv').config();
 pool_panjang.connect();
 pool_petengoran.connect();
+pool_canti.connect();
 module.exports = {
 
     // HTTP HANDLING
@@ -48,11 +49,15 @@ module.exports = {
 
             getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
             getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+            getDB_canti = await pool_canti.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_canti ORDER by datetime DESC LIMIT 1');
 
             feedLatency_pjg = getDB_panjang.rows[0].feedlatency;
             feedLatency_ptg = getDB_petengoran.rows[0].feedlatency;
+            feedLatency_cnt = getDB_canti.rows[0].feedlatency;
+
             lastDate_pjg = getDB_panjang.rows[0].datetime;
             lastDate_ptg = getDB_petengoran.rows[0].datetime
+            lastDate_cnt = getDB_canti.rows[0].datetime;
 
             var now = new Date();
             
@@ -64,17 +69,20 @@ module.exports = {
             const hoursBetweenDates_pjg = msBetweenDates_pjg / (60 * 60 * 1000);
             console.log('[Status REST-API PANJANG] ' + hoursBetweenDates_pjg.toFixed(0) + ' Hour from last data');
 
+            const msBetweenDates_cnt = (Math.abs(lastDate_pjg.getTime() - now.getTime()));
+            const hoursBetweenDates_cnt = msBetweenDates_pjg / (60 * 60 * 1000);
+            console.log('[Status REST-API CANTI] ' + hoursBetweenDates_pjg.toFixed(0) + ' Hour from last data');
+
             if (hoursBetweenDates_ptg.toFixed(0) > 24){
                 feedLatency_ptg = "INACTIVE";
             }
             if (hoursBetweenDates_pjg.toFixed(0) > 24){
                 feedLatency_ptg = "INACTIVE";
             }
+            if (hoursBetweenDates_cnt.toFixed(0) > 24){
+                feedLatency_cnt = "INACTIVE";
+            }
             
-
-            // if (fl_pjg > 86400000 ) {feedLatency_pjg = 9999} else {feedLatency_pjg=fl_pjg}
-            // if (fl_ptg > 86400000 ) {feedLatency_ptg = "Inactive"} else {feedLatency_pjg=fl_ptg}
-
             status_panjang = {
                 sensor : "Sonar",
                 location : "Panjang, Krakatau",
@@ -104,6 +112,21 @@ module.exports = {
             };
             
             data.push(status_petengoran);
+
+            status_canti = {
+                sensor : "Sonar",
+                location : "Canti, Lampung Selatan",
+                country : "Indonesia",
+                provider : "Telkomsel",
+                lastWater : getDB_canti.rows[0].waterlevel,
+                lastDateTime : getDB_canti.rows[0].datetime,
+                feedLatency : feedLatency_cnt,
+                lastDate : new Date(lastDate_cnt).toLocaleDateString("en-CA"),
+                lastTime : new Date(lastDate_cnt).toLocaleTimeString("es-ES"),
+                timestamp : (moment(lastDate_cnt).locale('id').format()),
+            };
+            
+            data.push(status_canti);
 
             await res.json(data)
             console.log(`[REST-API GLOBAL] GET Status`);

@@ -10,6 +10,8 @@ require('dotenv').config()
 // CHECK for database. create if database not exist
 const dbase_canti = require('./src/canti/configs/database_canti'); 
 dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti (
+  id BIGINT NOT NULL PRIMARY KEY,
+  datetime TIMESTAMP NOT NULL,
   time TIME NOT NULL, 
   date DATE NOT NULL, 
   waterLevel FLOAT, 
@@ -18,12 +20,16 @@ dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti (
   forecast30 FLOAT, 
   forecast300 FLOAT,
   rms FLOAT,
-  threshold FLOAT)
+  threshold FLOAT,
+  alertlevel FLOAT,
+  feedlatency INT)
   `, function(err, result){
     console.log("Database Canti Connected");
   });
 
   dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti_stored (
+    id BIGINT NOT NULL PRIMARY KEY,
+    datetime TIMESTAMP NOT NULL,
     time TIME NOT NULL, 
     date DATE NOT NULL, 
     waterLevel FLOAT, 
@@ -32,7 +38,9 @@ dbase_canti.query(`CREATE TABLE IF NOT EXISTS mqtt_canti (
     forecast30 FLOAT, 
     forecast300 FLOAT,
     rms FLOAT,
-    threshold FLOAT)
+    threshold FLOAT,
+    alertlevel FLOAT,
+    feedlatency INT)
     `, function(err, result){
       console.log("Database Canti Connected");
     });
@@ -117,8 +125,8 @@ const { incomingData_panjang } = require('./src/panjang/controllers/controller_m
 
 // List of all subscribed topics
 var topic = [
-  process.env.TOPIC_1, 
-  process.env.TOPIC_2, 
+  process.env.TOPIC_CANTI1,
+  process.env.TOPIC_CANTI_IMAGE,
   process.env.TOPIC_PETENGORAN1,
   process.env.TOPIC_PETENGORAN_IMAGE,
   process.env.TOPIC_PANJANG1,
