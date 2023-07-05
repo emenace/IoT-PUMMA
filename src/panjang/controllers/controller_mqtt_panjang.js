@@ -73,7 +73,7 @@ module.exports = {
                         // fetch data DB
                         var dataDB_panjang = await dbase_mqtt.query(`
                         SELECT  
-                        to_timestamp(floor((extract('epoch' from datetime) / 10 )) * 10) 
+                        to_timestamp(floor((extract('epoch' from datetime) / 5 )) * 5) 
                         AT TIME ZONE 'UTC' as datetime,
                         COUNT(DISTINCT waterlevel),
                             AVG(waterlevel) as waterlevel,
@@ -81,7 +81,7 @@ module.exports = {
                             AVG(temperature) as temperature,
                             AVG(alertlevel) as alertlevel	
                         FROM mqtt_panjang
-                        where datetime >= now() - Interval '1 hour'
+                        where datetime >= now() - Interval '30 minute'
                         GROUP BY 1 
                         order by 1 desc
                         LIMIT 300
