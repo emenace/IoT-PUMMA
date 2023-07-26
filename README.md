@@ -7,7 +7,9 @@ Handling program for REST-API and MQTT data collecting from IoT Devices
 3. install required library with command <code>npm install</code>
 4. Open <code>.env-example</code> file, edit the configuration, save and rename as <code>.env</code>
 
-# Running program
+# Running MQTT Handler
 To run MQTT Handler Program, use command <code>node mqtt_only.js</code> or <code>pm2 start mqtt_only.js</code>
+
+# Running REST-API
 To run REST-API, use command <code>node rest_only.js</code> or <code>pm2 start rest_only.js</code>
 
