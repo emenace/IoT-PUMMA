@@ -71,7 +71,21 @@ module.exports = {
                         }   
 
                         // fetch data DB
-                        var dataDB_canti = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_canti ORDER BY datetime DESC LIMIT 300;`);
+                        var dataDB_canti = await dbase_mqtt.query(`
+                        SELECT  
+                        to_timestamp(floor((extract('epoch' from datetime) / 5 )) * 5) 
+                        AT TIME ZONE 'UTC' as datetime,
+                        COUNT(DISTINCT waterlevel),
+                            AVG(waterlevel) as waterlevel,
+                            AVG(voltage) as voltage,
+                            AVG(temperature) as temperature,
+                            AVG(alertlevel) as alertlevel	
+                        FROM mqtt_canti 
+                        where datetime >= now() - Interval '30 minute'
+                        GROUP BY 1 
+                        order by 1 desc
+                        LIMIT 300
+                        `);
                         if (dataDB_canti.rowCount === 0){
                             console.log("Database still empty. Waiting for new data");
                             dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
@@ -84,13 +98,13 @@ module.exports = {
                             if (payload.hasOwnProperty(TEMP_PATH)) {
                                 TEMP = parseFloat(payload[TEMP_PATH]);
                             } else {
-                                TEMP = (dataDB_canti.rows[0].temperature); //use latest data from database if temperature not avasysilable
-                            }
+                                TEMP = (dataDB_canti.rows[0].temperature).toFixed(2); //use latest data from database if temperature not avasysilable
+                            }   
 
                             if (payload.hasOwnProperty(VOLTAGE_PATH)) {
                                 VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
                             } else {
-                                VOLTAGE = (dataDB_canti.rows[0].voltage); //use latest data from database if temperature not available
+                                VOLTAGE = (dataDB_canti.rows[0].voltage).toFixed(2); //use latest data from database if temperature not available
                             }
 
                             // Forecast 30
@@ -130,7 +144,13 @@ module.exports = {
 
                             // Calculate RMS
                             for (i=0 ; i<=dataDB_canti.rowCount-1; i++){
-                                rmsSquare += Math.pow(dataDB_canti.rows[i].alertlevel, 2);
+                                dataDB = dataDB_canti.rows[i].alertlevel;
+                                if (isNaN(dataDB)){
+                                    quare = Math.pow(0, 2);
+                                }else {
+                                    quare = Math.pow((dataDB_canti.rows[i].alertlevel), 2);
+                                }
+                                rmsSquare = rmsSquare + quare;
                             }    
                             rmsMean = (rmsSquare / (dataDB_canti.rowCount));
                             RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
