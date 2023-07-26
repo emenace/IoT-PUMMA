@@ -1,33 +1,42 @@
 const dbase_mqtt = require('../configs/database_canti');
 const mqtt_connect = require('../../global_config/mqtt_config');
+const {auth} = require('../../global_config/controllers/google_api');
+const { google } = require('googleapis');
 const moment = require('moment-timezone');
+const fs = require('fs');
+const path = require('path');
+const findRemoveSync = require('find-remove')
 const lsq = require('least-squares'); //Least square method to forecasting
 
 require('dotenv').config()
 
 // PATH name check on .env
-TOPIC_API = process.env.TOPIC_2;
-
 TS_PATH = process.env.PAYLOAD_CANTI_TS // Now using TSjsn;
 DATE_PATH = process.env.PAYLOAD_CANTI_DATE //Now using Datejsn;
 WATERLEVEL_PATH = process.env.PAYLOAD_CANTI_WATERLEVEL //Now using tinggijsn; //change path based on data from raspberrypi
 TEMP_PATH = process.env.PAYLOAD_CANTI_TEMP
 VOLTAGE_PATH = process.env.PAYLOAD_CANTI_VOLTAGE
 
-var { TS, DATE, WATERLEVEL, TEMP, VOLTAGE,FORECAST30, FORECAST300 } = [];
+var { DATA_ID, TS, DATE, WATERLEVEL, TEMP, VOLTAGE,FORECAST30, FORECAST300, DATETIME } = [];
 
-//Save RMS data for forecasting 
+//Save ALERT and RMS data forecasting 
+var ALERTLEVEL;
 var RMSROOT;
 var RMSTHRESHOLD;
 var STATUSWARNING;
+var FEEDLATENCY;
+
+//FAILSAFE
+if (TEMP===null){TEMP=49};
+if (VOLTAGE===null){VOLTAGE=12.5};
 
 module.exports = {
 
     // MQTT HANDLING
-    incomingData_canti(topic,message){
+    async incomingData_canti(topic,message){
 
         // Handling data from topic 1 (data from raspberrypi)
-        if (topic === process.env.TOPIC_1){
+        if (topic === process.env.TOPIC_CANTI1){
             
             // Save subscribed message to payload variable
             const payload = JSON.parse(message.toString());
@@ -46,188 +55,224 @@ module.exports = {
                     DATE = payload[DATE_PATH];
                     WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
 
-                    dateTime = DATE + 'T' + TS;
-                    console.log(dateTime);
-                }
-            }
+                    DATETIME = DATE +'T'+ TS;
+                    DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
+                    FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
+                    
+                    //Data Duplication Check
+                    var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_canti where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
+                    if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
+                        var count_canti = await dbase_mqtt.query(`SELECT count(*) from mqtt_canti`);
+                        
+                        //remove old data
+                        if (count_canti.rows[0].count >= 500000){
+                            dbCanti_delete_lastweek = await dbase_mqtt.query(`DELETE FROM mqtt_canti WHERE datetime < now()-'1 week'::interval`);
+                            console.log(`[U_TEWS CANTI 002   ] Fast-table Cleaned`);
+                        }   
 
-                // TEMPORARY. Add value to voltage and temp because its not available now
-                if ((VOLTAGE === null) || TEMP === null){
-                    VOLTAGE = 12;
-                    TEMP = 20;
-                } // DELETE IF NOT USE
-
-            // Logic to check there is "suhu" & "tegangan" or not in JSON from mqtt
-            // If "suhu" or "tegangan" available in json, use that data.. if not, use last data from database.
-            
-            // Check data is available or not in database   
-            dbase_mqtt.query("SELECT CASE WHEN EXISTS (SELECT * FROM mqtt_canti LIMIT 1) THEN 1 ELSE 0 END", function(err, result){
-                if (result.rows[0].case === 0){
-                    console.log("Table is empty. no value about voltage and temp. use 0 instead");
-                    // If table is empty, value of variables set to 0.
-                    TEMP = 0;
-                    VOLTAGE = 0;
-                } 
-                else {
-                    //get last data from database.
-                    dbase_mqtt.query("SELECT temperature, voltage FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 1", function(err, result){
-                        if (!err){
-
-                            // Checking payload has temp or not
+                        // fetch data DB
+                        var dataDB_canti = await dbase_mqtt.query(`
+                        SELECT  
+                        to_timestamp(floor((extract('epoch' from datetime) / 5 )) * 5) 
+                        AT TIME ZONE 'UTC' as datetime,
+                        COUNT(DISTINCT waterlevel),
+                            AVG(waterlevel) as waterlevel,
+                            AVG(voltage) as voltage,
+                            AVG(temperature) as temperature,
+                            AVG(alertlevel) as alertlevel	
+                        FROM mqtt_canti 
+                        where datetime >= now() - Interval '30 minute'
+                        GROUP BY 1 
+                        order by 1 desc
+                        LIMIT 300
+                        `);
+                        if (dataDB_canti.rowCount === 0){
+                            console.log("Database still empty. Waiting for new data");
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_canti(id, datetime, time, date, waterlevel, voltage, temperature, 
+                            forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+                        } else {
+                            var pull30_length;
+                            var dbCanti_dataLength = dataDB_canti.rowCount;
+                            
                             if (payload.hasOwnProperty(TEMP_PATH)) {
                                 TEMP = parseFloat(payload[TEMP_PATH]);
                             } else {
-                                TEMP = (result.rows[0].temperature); //use latest data from database if temperature not available
-                            }
+                                TEMP = (dataDB_canti.rows[0].temperature).toFixed(2); //use latest data from database if temperature not avasysilable
+                            }   
 
-                            // Checking payload has voltage or not
-                            if (payload.hasOwnProperty(TEMP_PATH)) {
-                                VOLTAGE = (result.rows[0].voltage);
+                            if (payload.hasOwnProperty(VOLTAGE_PATH)) {
+                                VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
                             } else {
-                                TEMP = (result.rows[0].temperature); //use latest data from database if voltage not available
+                                VOLTAGE = (dataDB_canti.rows[0].voltage).toFixed(2); //use latest data from database if temperature not available
                             }
-                        } else throw (err);
-                    });
-                };
-            });
 
-            // Forecasting 30 & RMS
-            // Get 30 data for forecasting
-            // 30 forecast : 29 data from db, 1 data from mqtt
-            dbase_mqtt.query(`SELECT waterlevel FROM mqtt_canti 
-                        ORDER BY date DESC, time DESC LIMIT 29;`,function(err,result){
+                            // Forecast 30
+                            if (dbCanti_dataLength <= 30){
+                                pull30_length = dbCanti_dataLength;
+                            } else {
+                                pull30_length = 30;
+                            }
+                            var timeSeries = []; var timeWater = [];
+                            var rmsSquare = 0;   var rmsMean = 0;
+                            timeSeries.push(30);
+                            timeWater.push(WATERLEVEL);
 
-                if (err) throw err;
-                var timeSeries = []; var timeWater = [];
-                var rmsSquare = 0;   var rmsMean = 0;
+                            for (i=0 ; i<=pull30_length-1; i++){
+                                timeSeries.push(i);
+                                timeWater.push(dataDB_canti.rows[i].waterlevel);
+                            }   
+                            timeSeries.reverse(); 
+                            timeWater.reverse();
+                            var forecast = lsq(timeSeries, timeWater);
+                            FORECAST30 = parseFloat(forecast(31).toFixed(2));
 
-                // Add latest data to forecast series
-                timeSeries.push(30);
-                timeWater.push(WATERLEVEL);
+                            // Forecast 300
+                            var timeSeries_fc300 = []; var timeWater_fc300 = [];
+                            timeSeries_fc300.push(300);
+                            timeWater_fc300.push(WATERLEVEL);
 
-                //parse all data from db to variable
-                for (i=0 ; i<=result.rowCount-1; i++){
-                    timeSeries.push(i);
-                    timeWater.push(result.rows[i].waterlevel);
-                    rmsSquare += Math.pow(result.rows[i].waterlevel, 2);
-                }    
+                            for (i=0 ; i<=dataDB_canti.rowCount-1; i++){
+                                timeSeries_fc300.push(i);
+                                timeWater_fc300.push(dataDB_canti.rows[i].waterlevel);
+                            }
+                            timeSeries_fc300.reverse(); 
+                            timeWater_fc300.reverse();//reverse descending data from db and mqtt
 
-                timeSeries.reverse(); 
-                timeWater.reverse();//reverse descending data from db and mqtt
+                            var forecast3 = lsq(timeSeries_fc300, timeWater_fc300);
+                            FORECAST300 = parseFloat(forecast3(301).toFixed(2));
 
-                var forecast = lsq(timeSeries, timeWater);
-                FORECAST30 = parseFloat(forecast(31).toFixed(2));
+                            // Calculate RMS
+                            for (i=0 ; i<=dataDB_canti.rowCount-1; i++){
+                                dataDB = dataDB_canti.rows[i].alertlevel;
+                                if (isNaN(dataDB)){
+                                    quare = Math.pow(0, 2);
+                                }else {
+                                    quare = Math.pow((dataDB_canti.rows[i].alertlevel), 2);
+                                }
+                                rmsSquare = rmsSquare + quare;
+                            }    
+                            rmsMean = (rmsSquare / (dataDB_canti.rowCount));
+                            RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
+                            RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
 
-                // Calculate RMS
-                rmsMean = (rmsSquare / (result.rowCount));
-                RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
-                RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2));   
-            });
+                            // ALERT logic
+                            //Calculate Alert
+                            ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
+                            //console.log("ALERT : " + ALERTLEVEL);
+                            if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
 
-            // Forecasting 300 & RMS
-            // Get 30 data for forecasting
-            // 300 forecast : 299 data from db, 1 data from mqtt
-            dbase_mqtt.query(`SELECT waterlevel FROM mqtt_canti 
-                        ORDER BY date DESC, time DESC LIMIT 299;`,function(err,result){
-                if (err) throw err;
-                var timeSeries = []; var timeWater = [];
+                            console.log(`[U_TEWS CANTI 002     ] OK. TIME : ${Date(DATETIME)}`);
 
-                // Add latest data to forecast series
-                timeSeries.push(30);
-                timeWater.push(WATERLEVEL);
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_canti(id, datetime, time, date, waterlevel, voltage, temperature, 
+                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_canti_stored(id, datetime, time, date, waterlevel, voltage, temperature, 
+                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
 
-                //parse all data from db to variable
-                for (i=0 ; i<=result.rowCount-1; i++){
-                    timeSeries.push(i);
-                    timeWater.push(result.rows[i].waterlevel);
+                            // PUBLISH DATA
+                            
+                            var isoDateString = new Date(DATETIME).toISOString();
+                            const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
+                            const jsonToPublish = {
+                                "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
+                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
+                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
+                            };
+
+                            mqtt_connect.publish('pummaUTEWS/canti', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
+                            mqtt_connect.publish('pumma/canti',JSON.stringify(jsonToPublish), {qos: 2, retain:false}, (err) => {});
+                        }
+
+                    } else {
+                        console.log(`[U_TEWS CANTI 002     ] ERROR Data Duplicated on time : ${DATETIME}`);
+                    }    
                 }
-                timeSeries.reverse(); 
-                timeWater.reverse();//reverse descending data from db and mqtt
+            }
+        }
 
-                var forecast = lsq(timeSeries, timeWater);
-                FORECAST300 = parseFloat(forecast(301).toFixed(2));
+        if (topic === process.env.TOPIC_CANTI_IMAGE){
+            const imagePayload = message.toString();
+            fs.writeFile("src/canti/image/canti_b64string.txt", imagePayload, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+                //console.log("IMAGE [U_TEWS Canti] file was saved!");
+            }); 
+
+            let image = `data:image/jpeg;base64,${message}`
+            var data = image.replace(/^data:image\/\w+;base64,/, '');
+            fs.writeFile(`src/canti/image/canti.png`, data, {encoding: 'base64'}, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+                console.log("[U_TEWS Canti 002     ] Image file was saved!");
             });
 
-            // Threshold logic
-            if (WATERLEVEL >= RMSTHRESHOLD) {
-            STATUSWARNING = "WARNING";
-            } else STATUSWARNING = "SAFE";
+            let ts = new Date(Date.now());
 
-            // Show All Data To console.log 
-            // Uncomment console.log below to show data on terminal
+            var monthFolder = ((ts.getMonth()+1));
+            !fs.existsSync(`src/canti/image/${monthFolder}`) && fs.mkdirSync(`src/canti/image/${monthFolder}`);
 
-            // console.log(`
-            // Time : ${TS}, Date : ${DATE}, WaterLevel : ${WATERLEVEL}, FC30 : ${FORECAST30}, FC300 : ${FORECAST300}
-            // Temperature : ${TEMP}, Voltage : ${VOLTAGE}
-            // RMS : ${RMSROOT}, THRESHOLD : ${RMSTHRESHOLD}
-            // STATUS : ${STATUSWARNING}`);
+            var dateFolder = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear());
+            !fs.existsSync(`src/canti/image/${monthFolder}/${dateFolder}`) && fs.mkdirSync(`src/canti/image/${monthFolder}/${dateFolder}`);
 
-            //PUBLISH ALL DATA TO NEW TOPIC ON MQTT
-            const jsonToPublish = {"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
-                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "rms":RMSROOT, 
-                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING}
-            mqtt_connect.publish('pummamqtt/canti',JSON.stringify(jsonToPublish), {qos: 0, retain:false}, (err) => {if (err) {console.log(err);};
-
-            //INSERT ALL DATA TO DATABASE
-            const dataArray = [TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD]; 
-            const insertQuery = `INSERT INTO mqtt_canti(time, date, waterlevel, voltage, temperature, 
-                                forecast30, forecast300, rms, threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
-            dbase_mqtt.query(insertQuery, dataArray, (err, res) => {
-                if (err) throw err;
-                console.log(`DB CANTI : Time = ${TS}, WLevel = ${WATERLEVEL}, FRC 30 = ${FORECAST30}, FRC 300 = ${FORECAST300}, Volt = ${VOLTAGE}, Temp = ${TEMP}`);
-            });       
-        });
-        }
-
-        // Handling topic 2 (API)
-        if (topic === TOPIC_API) {
-            payload = (message.toString());
-            
-            if (payload === "getDataCanti"){
-                dbase_mqtt.query("SELECT * FROM mqtt_canti ORDER BY date DESC, time DESC LIMIT 100", function(err, result){
-                    if (err) throw (err);
-                    mqtt_connect.publish(TOPIC_API,JSON.stringify(result.rows.reverse()), {qos:2, retain:true});
-                    console.log("Data published");
-                });
-            } 
-        }
-
-        // Publish Chart Data
-        dbase_mqtt.query(`SELECT waterlevel,forecast30,forecast300,rms,threshold FROM mqtt_canti 
-                        ORDER BY date DESC, time DESC LIMIT 30;`,function(err,result){
-            if (err) throw (err);
-
-            var DATA_ARRAY_WATERLEVEL = [];
-            var DATA_ARRAY_FORECAST30 = [];
-            var DATA_ARRAY_FORECAST300 = [];
-            var DATA_ARRAY_RMS = [];
-            var DATA_ARRAY_THRESHOLD = [];
-
-            for (i=0 ; i<=result.rowCount-1; i++){
-                DATA_ARRAY_WATERLEVEL.push(result.rows[i].waterlevel);
-                DATA_ARRAY_FORECAST30.push(result.rows[i].forecast30);
-                DATA_ARRAY_FORECAST300.push(result.rows[i].forecast300);
-                DATA_ARRAY_RMS.push(result.rows[i].rms);
-                DATA_ARRAY_THRESHOLD.push(result.rows[i].threshold);
-            } 
-            // mqtt_connect.publish('pummamqtt/canti/chart/waterLevel',JSON.stringify(DATA_ARRAY_WATERLEVEL.reverse()), 
-            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
-       
-            // mqtt_connect.publish('pummamqtt/canti/chart/forecast30',JSON.stringify(DATA_ARRAY_FORECAST30.reverse()), 
-            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
-            
-            // mqtt_connect.publish('pummamqtt/canti/chart/forecast300',JSON.stringify(DATA_ARRAY_FORECAST300.reverse()), 
-            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
+            var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
            
-            // mqtt_connect.publish('pummamqtt/canti/chart/rms',JSON.stringify(DATA_ARRAY_RMS.reverse()), 
-            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
-            
-            // mqtt_connect.publish('pummamqtt/canti/chart/threshold',JSON.stringify(DATA_ARRAY_THRESHOLD.reverse()), 
-            //     {qos: 0, retain:false}, (err) => {if (err) {console.log(err);}});                     
-            
-        });
+            // fs.writeFileSync(`src/canti/image/${monthFolder}/${dateFolder}/${datetimes}_canti.png`, data, {encoding: 'base64'}, function(err) {
+            //     if(err) {
+            //         return console.log(err);
+            //     }
+            // });
 
+            // UPLOAD TO GOOGLE DRIVE
+            const driveService = google.drive({
+                version : 'v3', auth
+            });
+
+            const metadata = {
+                'name' : `${datetimes}_canti.png`,
+                'parents' : ['1jwpQf-t-o04wIBxHukOFyAHTC9juvfds']
+            }
+            
+            let media = {
+                MimeType: 'image/png',
+                body : fs.createReadStream(`src/canti/image/canti.png`)
+            }
+
+            let response = await driveService.files.create({
+                resource : metadata, 
+                media : media,
+                fields : 'id'
+            })
         
+            switch(response.status){
+                case 200 : 
+                    console.log('done ', response.data.id ) 
+                    break;
+            }
+            
 
+            
+            const itemCount = fs.readdirSync('src/canti/image/').length;
+            if (itemCount <= 50){
+                fs.writeFile(`src/canti/image/${datetimes}_canti.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            } else {
+                var result = findRemoveSync('src/canti/image/', {
+                    age: { seconds: 3600 },
+                    extensions: '.png',
+                    limit: 50
+                });
+                fs.writeFile(`src/canti/image/${datetimes}_canti.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+            }   
+        }
     }
 }
