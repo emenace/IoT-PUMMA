@@ -16,16 +16,19 @@ require('dotenv').config();
 require('fs');
 
 module.exports = {
+    
 
     //////////////////////// RAW DATA ///////////////////////////
 
     async get_100Data(req,res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
             forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
             FROM mqtt_canti ORDER BY datetime DESC LIMIT 100`);
         
         res.status(200);
         res.send({
+            data_sent:TIMES,
             count:data.rowCount,
             result:data.rows.reverse(),
         })
@@ -34,12 +37,14 @@ module.exports = {
     },
 
     async get_countData(req,res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         var count = parseInt(req.params.count);
         data = await dbase_rest.query(`SELECT datetime, time, date, waterlevel, voltage, temperature, 
             forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
             FROM mqtt_canti ORDER BY datetime DESC LIMIT ${count}`);
         res.status(200);
         res.send({
+            data_sent:TIMES,
             count:data.rowCount,
             result:data.rows.reverse(),
         })
@@ -51,6 +56,7 @@ module.exports = {
     //////////////////////// PAGINATED  ///////////////////////////
 
     async get_pagination(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         var perPage = 100;
         var page = req.params.page;
         var offset = (page -  1) * perPage;
@@ -64,6 +70,7 @@ module.exports = {
         FROM mqtt_canti LIMIT ${perPage} OFFSET ${offset}`)
 
         res.json({
+            data_sent:TIMES,
             totalData:totalRow,
             page:page,
             totalPage:totalPage,
@@ -73,12 +80,14 @@ module.exports = {
     },
 
     async get_paginationCount(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
         forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
         FROM mqtt_canti 
         WHERE id IN (SELECT id FROM mqtt_canti ORDER BY datetime DESC LIMIT ${req.params.count})
         ORDER BY datetime DESC LIMIT ${req.query.limit} OFFSET ${req.query.offset}`)
         res.send({
+            data_sent:TIMES,
             totalData:req.params.count,
             count:data.rowCount,
             result: data.rows.reverse()
@@ -89,6 +98,7 @@ module.exports = {
     //////////////////////// BY TIME ///////////////////////////
 
     async get_byTime_obj(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         time = req.params.time;
         timer = req.query.timer;
         dataColumn = req.query.data;
@@ -101,6 +111,7 @@ module.exports = {
                     res.json({msg: `Error no column ${dataColumn} or Error time format. use available column : waterlevel, voltage, temperature,forecast30, forecast300. use time format <time>?timer=interval. Example "/1?time=day&data=waterlevel"`});
                 } 
                 res.json({
+                    data_sent:TIMES,
                     count:result.rowCount,
                     result: result.rows.reverse(),
                 })
@@ -115,6 +126,7 @@ module.exports = {
     },
 
     async get_byTime_list(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         var data = [];
         time = req.params.time;
         timer = req.query.timer;
@@ -134,6 +146,7 @@ module.exports = {
                         data.push([timeGMT7, result.rows[i].data])
                     }
                     res.json({
+                        data_sent:TIMES,
                         count:result.rowCount,
                         result: data.reverse(),
                     })
@@ -152,6 +165,7 @@ module.exports = {
     //////////////////////// BY DATE ///////////////////////////
 
     async get_byDate_obj(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         dateStart = req.query.start;
         dateEnd = req.query.end;  
         dataColumn = req.query.data;
@@ -170,6 +184,7 @@ module.exports = {
                     res.json({msg: "Error date format. use YYYY-M-D Example : 2023-3-28"});
                 };
                 res.json({
+                    data_sent:TIMES,
                     count:result.rowCount,
                     result: result.rows.reverse(),
                 })
@@ -181,6 +196,7 @@ module.exports = {
     //////////////////////// IMAGE ///////////////////////////
 
     async get_lastImage(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         res.status(200),
         res.sendFile('canti.png', {root : path.join(__dirname, '../image')})
         console.log(`[REST-API Canti] GET DATA IMAGE`);
@@ -189,6 +205,7 @@ module.exports = {
     //////////////////////// UNDER DEVELOPMENT ///////////////////////////
 
     async get_byTime_list_all(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         var data = [];
         time = req.params.time;
         timer = req.query.timer;
@@ -210,6 +227,7 @@ module.exports = {
                             result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
                     }
                     res.json({
+                        data_sent:TIMES,
                         info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
                         count:result.rowCount,
                         result: data.reverse(),
@@ -227,6 +245,7 @@ module.exports = {
     },
 
     async get_all_interval(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         var data = [];
         time = req.query.time;
         
@@ -276,6 +295,7 @@ module.exports = {
                             result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
                     }
                     res.json({
+                        data_sent:TIMES,
                         info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
                         count:result.rowCount,
                         result: data.reverse(),
@@ -285,6 +305,7 @@ module.exports = {
     },
 
     async get_all_interval_date(req, res){
+        var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
         var data = [];
         starts = req.query.start;
         end = req.query.end;
@@ -335,6 +356,7 @@ module.exports = {
                             result.rows[i].rms, result.rows[i].threshold, result.rows[i].alertlevel  ])
                     }
                     res.json({
+                        data_sent:TIMES,
                         info:"array info = 0:datetime, 1:waterlevel, 2:voltage, 3:temperature, 4:forecast30, 5:forecast300, 6:rms, 7:threshold, 8:alertlevel",
                         count:result.rowCount,
                         result: data.reverse(),
