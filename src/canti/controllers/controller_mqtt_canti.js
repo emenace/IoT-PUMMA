@@ -158,11 +158,24 @@ module.exports = {
 
                             // ALERT logic
                             //Calculate Alert
-                            ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
+                            alertLvl = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
+                            if (alertLvl == 0){
+                                ALERTLEVEL = 1;
+                            } else {
+                                ALERTLEVEL = alertLvl;
+                            }
                             //console.log("ALERT : " + ALERTLEVEL);
-                            if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
+                            if (ALERTLEVEL > RMSTHRESHOLD) {
+                                STATUSWARNING = "WARNING";
+                            } else if (ALERTLEVEL === RMSTHRESHOLD) {
+                                STATUSWARNING = "SAFE";
+                            } else {
+                                STATUSWARNING = "SAFE";
+                            }
 
                             console.log(`[U_TEWS CANTI 002     ] OK. TIME : ${Date(DATETIME)}`);
+
+                            var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
 
                             dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
                             insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_canti(id, datetime, time, date, waterlevel, voltage, temperature, 
@@ -177,7 +190,7 @@ module.exports = {
                             const jsonToPublish = {
                                 "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
                                 "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
-                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
+                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY, "data_sent":TIMES
                             };
 
                             mqtt_connect.publish('pummaUTEWS/canti', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
