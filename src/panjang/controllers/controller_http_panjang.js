@@ -256,7 +256,7 @@ module.exports = {
 
 
         if ((time.includes("month")) || ((regex_number[0]>7) && ((regex_text[0] === "day")||(regex_text[0] === "days")))) {
-            interval = 86400; //1 days
+            interval = 21600; //6 hours
         } else if ((time.includes("week")) || ((regex_number[0]>5) && ((regex_text[0] === "day")||(regex_text[0] === "days")))) {
             interval = 18000 // 5 hours
         } else if (time.includes("day")) {

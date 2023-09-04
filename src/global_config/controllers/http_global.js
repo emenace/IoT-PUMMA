@@ -69,17 +69,17 @@ module.exports = {
             const hoursBetweenDates_pjg = msBetweenDates_pjg / (60 * 60 * 1000);
             console.log('[Status REST-API PANJANG] ' + hoursBetweenDates_pjg.toFixed(0) + ' Hour from last data');
 
-            const msBetweenDates_cnt = (Math.abs(lastDate_pjg.getTime() - now.getTime()));
-            const hoursBetweenDates_cnt = msBetweenDates_pjg / (60 * 60 * 1000);
-            console.log('[Status REST-API CANTI] ' + hoursBetweenDates_pjg.toFixed(0) + ' Hour from last data');
+            const msBetweenDates_cnt = (Math.abs(lastDate_cnt.getTime() - now.getTime()));
+            const hoursBetweenDates_cnt = msBetweenDates_cnt / (60 * 60 * 1000);
+            console.log('[Status REST-API CANTI] ' + hoursBetweenDates_cnt.toFixed(0) + ' Hour from last data');
 
-            if (hoursBetweenDates_ptg.toFixed(0) > 24){
+            if (hoursBetweenDates_ptg.toFixed(0) > 2){
                 feedLatency_ptg = "INACTIVE";
             }
-            if (hoursBetweenDates_pjg.toFixed(0) > 24){
-                feedLatency_ptg = "INACTIVE";
+            if (hoursBetweenDates_pjg.toFixed(0) > 2){
+                feedLatency_pjg = "INACTIVE";
             }
-            if (hoursBetweenDates_cnt.toFixed(0) > 24){
+            if (hoursBetweenDates_cnt.toFixed(0) > 2){
                 feedLatency_cnt = "INACTIVE";
             }
             
