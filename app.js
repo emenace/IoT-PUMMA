@@ -106,7 +106,7 @@ httpServer.listen(process.env.API_PORT, () => {
 });
 
 httpsServer.listen(4443, () => {
-	console.log('HTTPS REST-API running on port 4443');
+	console.log('HTTPS REST-API running on port 4443 | TEST IT');
 });
 
 //// MQTT HANDLING 
