@@ -10,3 +10,5 @@ cert
 *.txt
 *.png
 user.json
+test
+image/
