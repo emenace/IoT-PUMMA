@@ -5,8 +5,8 @@ const { off } = require('process');
 const dbase_rest = new Pool({
     host:process.env.DB_HOST,
     port:process.env.DB_PORT,
-    user:"utews-dataRead",
-    password: "pwdDB@123",
+    user:process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_UTEWS
 })
 dbase_rest.connect();

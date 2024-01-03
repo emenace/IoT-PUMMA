@@ -29,9 +29,9 @@ const pool_panjang = new Pool({
 const pool_marinaj = new Pool({
     host:host,
     port:port,
-    user:"utews-dataAdmin",
-    password: "pwdDB@123",
-    database: "pumma-utews"
+    user:"postgres",
+    password: "pwdSSH@123",
+    database: "pumma_utews"
 });
 
 require('dotenv').config();
@@ -60,14 +60,17 @@ module.exports = {
             getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
             getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
             getDB_canti = await pool_canti.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_canti ORDER by datetime DESC LIMIT 1');
+            getDB_marinaj = await pool_canti.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_canti ORDER by datetime DESC LIMIT 1');
 
             feedLatency_pjg = getDB_panjang.rows[0].feedlatency;
             feedLatency_ptg = getDB_petengoran.rows[0].feedlatency;
             feedLatency_cnt = getDB_canti.rows[0].feedlatency;
+            feedLatency_mrn = getDB_marinaj.rows[0].feedlatency;
 
             lastDate_pjg = getDB_panjang.rows[0].datetime;
             lastDate_ptg = getDB_petengoran.rows[0].datetime
             lastDate_cnt = getDB_canti.rows[0].datetime;
+            lastDate_mrn = getDB_marinaj.rows[0].datetime;
 
             var now = new Date();
             
@@ -83,6 +86,10 @@ module.exports = {
             const hoursBetweenDates_cnt = msBetweenDates_cnt / (60 * 60 * 1000);
             console.log('[Status REST-API CANTI] ' + hoursBetweenDates_cnt.toFixed(0) + ' Hour from last data');
 
+            const msBetweenDates_mrn = (Math.abs(lastDate_mrn.getTime() - now.getTime()));
+            const hoursBetweenDates_mrn = msBetweenDates_mrn / (60 * 60 * 1000);
+            console.log('[Status REST-API MARINA JAMBU] ' + hoursBetweenDates_mrn.toFixed(0) + ' Hour from last data');
+
             if (hoursBetweenDates_ptg.toFixed(0) > 2){
                 feedLatency_ptg = "INACTIVE";
             }
@@ -92,6 +99,10 @@ module.exports = {
             if (hoursBetweenDates_cnt.toFixed(0) > 2){
                 feedLatency_cnt = "INACTIVE";
             }
+            if (hoursBetweenDates_mrn.toFixed(0) > 2){
+                feedLatency_cnt = "INACTIVE";
+            }
+            
             
             status_panjang = {
                 sensor : "Sonar",
@@ -137,6 +148,21 @@ module.exports = {
             };
             
             data.push(status_canti);
+
+            status_marinaj = {
+                sensor : "Sonar",
+                location : "Marina Jambu",
+                country : "Indonesia",
+                provider : "Telkomsel",
+                lastWater : getDB_marinaj.rows[0].waterlevel,
+                lastDateTime : getDB_marinaj.rows[0].datetime,
+                feedLatency : feedLatency_mrn,
+                lastDate : new Date(lastDate_mrn).toLocaleDateString("en-CA"),
+                lastTime : new Date(lastDate_mrn).toLocaleTimeString("es-ES"),
+                timestamp : (moment(lastDate_mrn).locale('id').format()),
+            };
+            
+            data.push(status_marinaj);
 
             await res.json(data)
             console.log(`[REST-API GLOBAL] GET Status`);
