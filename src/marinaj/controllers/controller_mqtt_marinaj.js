@@ -11,11 +11,11 @@ const lsq = require('least-squares'); //Least square method to forecasting
 require('dotenv').config()
 
 // PATH name check on .env
-TS_PATH = process.env.PAYLOAD_PETENGORAN_TS // Now using TSjsn;
-DATE_PATH = process.env.PAYLOAD_PETENGORAN_DATE //Now using Datejsn;
-WATERLEVEL_PATH = process.env.PAYLOAD_PETENGORAN_WATERLEVEL //Now using tinggijsn; //change path based on data from raspberrypi
-TEMP_PATH = process.env.PAYLOAD_PETENGORAN_TEMP
-VOLTAGE_PATH = process.env.PAYLOAD_PETENGORAN_VOLTAGE
+TS_PATH = "TS_Sensor"; // Now using TSjsn;
+DATE_PATH = "Date_Sensor";
+WATERLEVEL_PATH = "tinggi_Maxsonar_MJ"; //Now using tinggijsn; //change path based on data from raspberrypi
+TEMP_PATH = "Raspi_Temp_MJ";
+VOLTAGE_PATH = "Battery_Voltage";
 
 var { DATA_ID, TS, DATE, WATERLEVEL, TEMP, VOLTAGE,FORECAST30, FORECAST300, DATETIME } = [];
 
@@ -38,142 +38,147 @@ module.exports = {
         // Handling data from topic 1 (data from raspberrypi)
         if (topic === "PUMMA_DATA_MARINAJAMBU"){
             
+            //Save subscribed message to payload variable
             const payload = JSON.parse(message.toString());
-            console.log(payload);
-            // // Save subscribed message to payload variable
-            // const payload = JSON.parse(message.toString());
+            
+            // Parse data
+            TS = payload[TS_PATH];
+            DATE = payload[DATE_PATH];
+            WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
 
-            // // Checking property of Time, Date, and Waterlevel. so it will never null
-            // if ((payload.hasOwnProperty(TS_PATH)) 
-            //     && (payload.hasOwnProperty(DATE_PATH)) 
-            //     && (payload.hasOwnProperty(WATERLEVEL_PATH))){
+            // Create datetime format
+            DATETIME = DATE +'T'+ TS+"+07:00";
+            //console.log(Date(DATETIME)); //TEST DATETIME
 
-            //     if ((payload[TS_PATH] != null) 
-            //         && (payload[DATE_PATH] != null) 
-            //         && (payload[WATERLEVEL_PATH] != null)) {
+            // Checking property of Time, Date, and Waterlevel. so it will never null
+            if ((payload.hasOwnProperty(TS_PATH)) 
+                && (payload.hasOwnProperty(DATE_PATH)) 
+                && (payload.hasOwnProperty(WATERLEVEL_PATH))){
+
+                if ((payload[TS_PATH] != null) 
+                    && (payload[DATE_PATH] != null) 
+                    && (payload[WATERLEVEL_PATH] != null)) {
                     
-            //         // Save Payload to a variable.       
-            //         TS = payload[TS_PATH]
-            //         DATE = payload[DATE_PATH];
-            //         WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
-
-            //         DATETIME = DATE +'T'+ TS;
-            //         DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
-            //         FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
+                    // Save Payload to a variable.       
+                    TS = payload[TS_PATH]
+                    DATE = payload[DATE_PATH];
+                    WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
+                    DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
+                    FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
                     
-            //         //Data Duplication Check
-            //         var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_petengoran where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
-            //         if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
-            //             //remove old data
-            //             var count_petengoran = await dbase_mqtt.query(`SELECT count(*) from mqtt_petengoran`);
-            //             if (count_petengoran.rows[0].count >= 500000){
-            //                 dbPetengoran_delete_lastweek = await dbase_mqtt.query(`DELETE FROM mqtt_petengoran WHERE datetime < now()-'1 week'::interval`);
-            //                 console.log(`[U_TEWS PETENGORAN 003   ] Fast-table Cleaned`);
-            //             }     
-            //             // fetch data DB
-            //             var dataDB_petengoran = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 300;`);                   
-            //             if (dataDB_petengoran.rowCount === 0){
-            //                 console.log("Database still empty. Waiting for new data");
-            //                 dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
-            //                 insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
-            //                 forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
-            //             } else {
-            //                 var pull30_length;
-            //                 var dbPetengoran_dataLength = dataDB_petengoran.rowCount;
+                    //Data Duplication Check
+                    var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM marinaj_waterlevel_fast where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
+                    if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
+                        //remove old data
+                        var count_marinaj = await dbase_mqtt.query(`SELECT count(*) from marinaj_waterlevel_fast`);
+                        if (count_marinaj.rows[0].count >= 500000){
+                            dbPetengoran_delete_lastweek = await dbase_mqtt.query(`DELETE FROM marinaj_waterlevel_fast WHERE datetime < now()-'1 week'::interval`);
+                            console.log(`[U_TEWS MARINA JAMBU 004   ] Fast-table Cleaned`);
+                        }     
+                        // fetch data DB
+                        var dataDB_marinaj = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM marinaj_waterlevel_fast ORDER BY datetime DESC LIMIT 300;`);                   
+                        if (dataDB_marinaj.rowCount === 0){
+                            console.log("Database still empty. Waiting for new data");
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO marinaj_waterlevel_fast(id, datetime, time, date, waterlevel, voltage, temperature, 
+                            forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+                        } else {
+                            var pull30_length;
+                            var dbPetengoran_dataLength = dataDB_marinaj.rowCount;
                             
-            //                 if (payload.hasOwnProperty(TEMP_PATH)) {
-            //                     TEMP = parseFloat(payload[TEMP_PATH]);
-            //                 } else {
-            //                     TEMP = (dataDB_petengoran.rows[0].temperature); //use latest data from database if temperature not available
-            //                 }
+                            if (payload.hasOwnProperty(TEMP_PATH)) {
+                                TEMP = parseFloat(payload[TEMP_PATH]);
+                            } else {
+                                TEMP = (dataDB_marinaj.rows[0].temperature); //use latest data from database if temperature not available
+                            }
 
-            //                 if (payload.hasOwnProperty(VOLTAGE_PATH)) {
-            //                     VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
-            //                 } else {
-            //                     VOLTAGE = (dataDB_petengoran.rows[0].voltage); //use latest data from database if temperature not available
-            //                 }
+                            if (payload.hasOwnProperty(VOLTAGE_PATH)) {
+                                VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
+                            } else {
+                                VOLTAGE = (dataDB_marinaj.rows[0].voltage); //use latest data from database if temperature not available
+                            }
 
-            //                 // Forecast 30
-            //                 if (dbPetengoran_dataLength <= 30){
-            //                     pull30_length = dbPetengoran_dataLength;
-            //                 } else {
-            //                     pull30_length = 30;
-            //                 }
-            //                 var timeSeries = []; var timeWater = [];
-            //                 var rmsSquare = 0;   var rmsMean = 0;
-            //                 timeSeries.push(30);
-            //                 timeWater.push(WATERLEVEL);
+                            // Forecast 30
+                            if (dbPetengoran_dataLength <= 30){
+                                pull30_length = dbPetengoran_dataLength;
+                            } else {
+                                pull30_length = 30;
+                            }
+                            var timeSeries = []; var timeWater = [];
+                            var rmsSquare = 0;   var rmsMean = 0;
+                            timeSeries.push(30);
+                            timeWater.push(WATERLEVEL);
 
-            //                 for (i=0 ; i<=pull30_length-1; i++){
-            //                     timeSeries.push(i);
-            //                     timeWater.push(dataDB_petengoran.rows[i].waterlevel);
-            //                 }   
-            //                 timeSeries.reverse(); 
-            //                 timeWater.reverse();
-            //                 var forecast = lsq(timeSeries, timeWater);
-            //                 FORECAST30 = parseFloat(forecast(31).toFixed(2));
+                            for (i=0 ; i<=pull30_length-1; i++){
+                                timeSeries.push(i);
+                                timeWater.push(dataDB_marinaj.rows[i].waterlevel);
+                            }   
+                            timeSeries.reverse(); 
+                            timeWater.reverse();
+                            var forecast = lsq(timeSeries, timeWater);
+                            FORECAST30 = parseFloat(forecast(31).toFixed(2));
 
-            //                 // Forecast 300
-            //                 var timeSeries_fc300 = []; var timeWater_fc300 = [];
-            //                 timeSeries_fc300.push(300);
-            //                 timeWater_fc300.push(WATERLEVEL);
+                            // Forecast 300
+                            var timeSeries_fc300 = []; var timeWater_fc300 = [];
+                            timeSeries_fc300.push(300);
+                            timeWater_fc300.push(WATERLEVEL);
 
-            //                 for (i=0 ; i<=dataDB_petengoran.rowCount-1; i++){
-            //                     timeSeries_fc300.push(i);
-            //                     timeWater_fc300.push(dataDB_petengoran.rows[i].waterlevel);
-            //                 }
-            //                 timeSeries_fc300.reverse(); 
-            //                 timeWater_fc300.reverse();//reverse descending data from db and mqtt
+                            for (i=0 ; i<=dataDB_marinaj.rowCount-1; i++){
+                                timeSeries_fc300.push(i);
+                                timeWater_fc300.push(dataDB_marinaj.rows[i].waterlevel);
+                            }
+                            timeSeries_fc300.reverse(); 
+                            timeWater_fc300.reverse();//reverse descending data from db and mqtt
 
-            //                 var forecast3 = lsq(timeSeries_fc300, timeWater_fc300);
-            //                 FORECAST300 = parseFloat(forecast3(301).toFixed(2));
+                            var forecast3 = lsq(timeSeries_fc300, timeWater_fc300);
+                            FORECAST300 = parseFloat(forecast3(301).toFixed(2));
 
-            //                 // Calculate RMS
-            //                 for (i=0 ; i<=dataDB_petengoran.rowCount-1; i++){
-            //                     rmsSquare += Math.pow(dataDB_petengoran.rows[i].alertlevel, 2);
-            //                 }    
-            //                 rmsMean = (rmsSquare / (dataDB_petengoran.rowCount));
-            //                 RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
-            //                 RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
+                            // Calculate RMS
+                            for (i=0 ; i<=dataDB_marinaj.rowCount-1; i++){
+                                rmsSquare += Math.pow(dataDB_marinaj.rows[i].alertlevel, 2);
+                            }    
+                            rmsMean = (rmsSquare / (dataDB_marinaj.rowCount));
+                            RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
+                            RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
 
-            //                 // ALERT logic
-            //                 //Calculate Alert
-            //                 ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
-            //                 //console.log("ALERT : " + ALERTLEVEL);
-            //                 if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
+                            // ALERT logic
+                            //Calculate Alert
+                            ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
+                            //console.log("ALERT : " + ALERTLEVEL);
+                            if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
 
-            //                 console.log(`[U_TEWS PETENGORAN 001] OK. TIME : ${Date(DATETIME)}`);
+                            console.log(`[U_TEWS MARINA JAMBU 004] OK. TIME : ${Date(DATETIME)}`);
 
-            //                 dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
-            //                 insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
-            //                     forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
-            //                 insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran_stored(id, datetime, time, date, waterlevel, voltage, temperature, 
-            //                     forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO marinaj_waterlevel_fast(id, datetime, time, date, waterlevel, voltage, temperature, 
+                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+                            insertQuery = await dbase_mqtt.query(`INSERT INTO marinaj_waterlevel_storage(id, datetime, time, date, waterlevel, voltage, temperature, 
+                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
                             
-            //                 // PUBLISH DATA
+                            // PUBLISH DATA
 
-            //                 var isoDateString = new Date(DATETIME).toISOString();
-            //                 const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
-            //                 const jsonToPublish = {
-            //                     "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
-            //                     "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
-            //                     "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
-            //                 };
+                            var isoDateString = new Date(DATETIME).toISOString();
+                            const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
+                            const jsonToPublish = {
+                                "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
+                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
+                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
+                            };
 
-            //                 mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
-            //                 mqtt_connect.publish('pumma/petengoran',JSON.stringify(jsonToPublish), {qos: 2, retain:false}, (err) => {});
-            //             }                        
+                            mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
+                            mqtt_connect.publish('pumma/marinaj',JSON.stringify(jsonToPublish), {qos: 2, retain:false}, (err) => {});
+                        }                        
                         
-            //         } else {
-            //             console.log(`[U_TEWS PETENGORAN 001] ERROR Data Duplicated on time : ${DATETIME}`);
-            //         }    
-            //     }
-            // }
+                    } else {
+                        console.log(`[U_TEWS MARINA JAMBU 001] ERROR Data Duplicated on time : ${DATETIME}`);
+                    }    
+                }
+            }
         }
 
-        if (topic === process.env.TOPIC_PETENGORAN_IMAGE){
+        if (topic === "PUMMA_IMAGE_MARINAJAMBU"){
             const imagePayload = message.toString();
-            fs.writeFile("src/petengoran/image/petengoran_b64string.txt", imagePayload, function(err) {
+            fs.writeFile("src/marinaj/image/marinaj_b64string.txt", imagePayload, function(err) {
                 if(err) {
                     return console.log(err);
                 }
@@ -182,7 +187,7 @@ module.exports = {
 
             let image = `data:image/jpeg;base64,${message}`
             var data = image.replace(/^data:image\/\w+;base64,/, '');
-            fs.writeFile(`src/petengoran/image/petengoran.png`, data, {encoding: 'base64'}, function(err) {
+            fs.writeFile(`src/marinaj/image/marinaj.png`, data, {encoding: 'base64'}, function(err) {
                 if(err) {
                     return console.log(err);
                 }
@@ -192,14 +197,14 @@ module.exports = {
             let ts = new Date(Date.now());
 
             var monthFolder = ((ts.getMonth()+1));
-            !fs.existsSync(`src/petengoran/image/${monthFolder}`) && fs.mkdirSync(`src/petengoran/image/${monthFolder}`);
+            !fs.existsSync(`src/marinaj/image/${monthFolder}`) && fs.mkdirSync(`src/marinaj/image/${monthFolder}`);
 
             var dateFolder = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear());
-            !fs.existsSync(`src/petengoran/image/${monthFolder}/${dateFolder}`) && fs.mkdirSync(`src/petengoran/image/${monthFolder}/${dateFolder}`);
+            !fs.existsSync(`src/marinaj/image/${monthFolder}/${dateFolder}`) && fs.mkdirSync(`src/marinaj/image/${monthFolder}/${dateFolder}`);
 
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
             
-            // fs.writeFileSync(`src/petengoran/image/${monthFolder}/${dateFolder}/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
+            // fs.writeFileSync(`src/marinaj/image/${monthFolder}/${dateFolder}/${datetimes}_marinaj.png`, data, {encoding: 'base64'}, function(err) {
             //     if(err) {
             //         return console.log(err);
             //     }
@@ -211,13 +216,13 @@ module.exports = {
             });
 
             const metadata = {
-                'name' : `${datetimes}_petengoran.png`,
-                'parents' : ['1m1bqZAhEYvJ1jqn5pYYI2r7r5mQlJAL7']
+                'name' : `${datetimes}_marinaj.png`,
+                'parents' : ['1u7PG5ENOpG-9V4sp5AcKRpUE2DpJcAHi']
             }
             
             let media = {
                 MimeType: 'image/png',
-                body : fs.createReadStream(`src/petengoran/image/petengoran.png`)
+                body : fs.createReadStream(`src/marinaj/image/marinaj.png`)
             }
 
             let response = await driveService.files.create({
@@ -232,20 +237,20 @@ module.exports = {
                     break;
             }
 
-            const itemCount = fs.readdirSync('src/petengoran/image/').length;
+            const itemCount = fs.readdirSync('src/marinaj/image/').length;
             if (itemCount <= 50){
-                fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
+                fs.writeFile(`src/marinaj/image/${datetimes}_marinaj.png`, data, {encoding: 'base64'}, function(err) {
                     if(err) {
                         return console.log(err);
                     }
                 });
             } else {
-                var result = findRemoveSync('src/petengoran/image/', {
+                var result = findRemoveSync('src/marinaj/image/', {
                     age: { seconds: 3600 },
                     extensions: '.png',
                     limit: 50
                 });
-                fs.writeFile(`src/petengoran/image/${datetimes}_petengoran.png`, data, {encoding: 'base64'}, function(err) {
+                fs.writeFile(`src/marinaj/image/${datetimes}_marinaj.png`, data, {encoding: 'base64'}, function(err) {
                     if(err) {
                         return console.log(err);
                     }
