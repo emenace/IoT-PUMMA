@@ -19,7 +19,8 @@ mqtt_connect.subscribe(topic, (err) => {
 });
 
 // Handle message from mqtt
-//mqtt_connect.on("message", incomingData_canti);
+const {data_marinaj} = require('../IoT-PUMMA/src/marinaj/controllers/controller_mqtt_marinaj')
+mqtt_connect.on("message", data_marinaj);
 //mqtt_connect.on("message", incomingData_petengoran);
 //mqtt_connect.on("message", incomingData_panjang);
 

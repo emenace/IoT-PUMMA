@@ -14,7 +14,7 @@ module.exports = {
             rms FLOAT,
             threshold FLOAT)
             `, function(err, result){
-              console.log("Database Marina Jambu Connected");
+              console.log("FastStorage Database Marina Jambu Connected");
             })
             dbase.query(`CREATE TABLE IF NOT EXISTS marinaj_waterlevel_storage(
               time TIME NOT NULL, 
@@ -27,7 +27,7 @@ module.exports = {
               rms FLOAT,
               threshold FLOAT)
               `, function(err, result){
-                console.log("Database Marina Jambu Connected");
+                console.log("FullStorage Database Marina Jambu Connected");
               })
     }
 }

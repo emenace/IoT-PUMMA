@@ -33,140 +33,142 @@ if (VOLTAGE===null){VOLTAGE=12.5};
 module.exports = {
 
     // MQTT HANDLING
-    async incomingData_petengoran(topic,message){
+    async data_marinaj(topic,message){
 
         // Handling data from topic 1 (data from raspberrypi)
-        if (topic === process.env.TOPIC_PETENGORAN1){
+        if (topic === "PUMMA_DATA_MARINAJAMBU"){
             
-            // Save subscribed message to payload variable
             const payload = JSON.parse(message.toString());
+            console.log(payload);
+            // // Save subscribed message to payload variable
+            // const payload = JSON.parse(message.toString());
 
-            // Checking property of Time, Date, and Waterlevel. so it will never null
-            if ((payload.hasOwnProperty(TS_PATH)) 
-                && (payload.hasOwnProperty(DATE_PATH)) 
-                && (payload.hasOwnProperty(WATERLEVEL_PATH))){
+            // // Checking property of Time, Date, and Waterlevel. so it will never null
+            // if ((payload.hasOwnProperty(TS_PATH)) 
+            //     && (payload.hasOwnProperty(DATE_PATH)) 
+            //     && (payload.hasOwnProperty(WATERLEVEL_PATH))){
 
-                if ((payload[TS_PATH] != null) 
-                    && (payload[DATE_PATH] != null) 
-                    && (payload[WATERLEVEL_PATH] != null)) {
+            //     if ((payload[TS_PATH] != null) 
+            //         && (payload[DATE_PATH] != null) 
+            //         && (payload[WATERLEVEL_PATH] != null)) {
                     
-                    // Save Payload to a variable.       
-                    TS = payload[TS_PATH]
-                    DATE = payload[DATE_PATH];
-                    WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
+            //         // Save Payload to a variable.       
+            //         TS = payload[TS_PATH]
+            //         DATE = payload[DATE_PATH];
+            //         WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
 
-                    DATETIME = DATE +'T'+ TS;
-                    DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
-                    FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
+            //         DATETIME = DATE +'T'+ TS;
+            //         DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
+            //         FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
                     
-                    //Data Duplication Check
-                    var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_petengoran where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
-                    if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
-                        //remove old data
-                        var count_petengoran = await dbase_mqtt.query(`SELECT count(*) from mqtt_petengoran`);
-                        if (count_petengoran.rows[0].count >= 500000){
-                            dbPetengoran_delete_lastweek = await dbase_mqtt.query(`DELETE FROM mqtt_petengoran WHERE datetime < now()-'1 week'::interval`);
-                            console.log(`[U_TEWS PETENGORAN 003   ] Fast-table Cleaned`);
-                        }     
-                        // fetch data DB
-                        var dataDB_petengoran = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 300;`);                   
-                        if (dataDB_petengoran.rowCount === 0){
-                            console.log("Database still empty. Waiting for new data");
-                            dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
-                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
-                            forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
-                        } else {
-                            var pull30_length;
-                            var dbPetengoran_dataLength = dataDB_petengoran.rowCount;
+            //         //Data Duplication Check
+            //         var DuplicateCheck = await dbase_mqtt.query(`SELECT CASE WHEN EXISTS (SELECT datetime FROM mqtt_petengoran where id = ${DATA_ID}) THEN 1 ELSE 0 END`)
+            //         if (DuplicateCheck.rows[0].case === 0){ //If no duplicate then :
+            //             //remove old data
+            //             var count_petengoran = await dbase_mqtt.query(`SELECT count(*) from mqtt_petengoran`);
+            //             if (count_petengoran.rows[0].count >= 500000){
+            //                 dbPetengoran_delete_lastweek = await dbase_mqtt.query(`DELETE FROM mqtt_petengoran WHERE datetime < now()-'1 week'::interval`);
+            //                 console.log(`[U_TEWS PETENGORAN 003   ] Fast-table Cleaned`);
+            //             }     
+            //             // fetch data DB
+            //             var dataDB_petengoran = await dbase_mqtt.query(`SELECT datetime, waterlevel, voltage, temperature, alertlevel FROM mqtt_petengoran ORDER BY datetime DESC LIMIT 300;`);                   
+            //             if (dataDB_petengoran.rowCount === 0){
+            //                 console.log("Database still empty. Waiting for new data");
+            //                 dataArray = [DATA_ID, DATETIME, TS, DATE, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+            //                 insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
+            //                 forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+            //             } else {
+            //                 var pull30_length;
+            //                 var dbPetengoran_dataLength = dataDB_petengoran.rowCount;
                             
-                            if (payload.hasOwnProperty(TEMP_PATH)) {
-                                TEMP = parseFloat(payload[TEMP_PATH]);
-                            } else {
-                                TEMP = (dataDB_petengoran.rows[0].temperature); //use latest data from database if temperature not available
-                            }
+            //                 if (payload.hasOwnProperty(TEMP_PATH)) {
+            //                     TEMP = parseFloat(payload[TEMP_PATH]);
+            //                 } else {
+            //                     TEMP = (dataDB_petengoran.rows[0].temperature); //use latest data from database if temperature not available
+            //                 }
 
-                            if (payload.hasOwnProperty(VOLTAGE_PATH)) {
-                                VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
-                            } else {
-                                VOLTAGE = (dataDB_petengoran.rows[0].voltage); //use latest data from database if temperature not available
-                            }
+            //                 if (payload.hasOwnProperty(VOLTAGE_PATH)) {
+            //                     VOLTAGE = parseFloat(payload[VOLTAGE_PATH]);
+            //                 } else {
+            //                     VOLTAGE = (dataDB_petengoran.rows[0].voltage); //use latest data from database if temperature not available
+            //                 }
 
-                            // Forecast 30
-                            if (dbPetengoran_dataLength <= 30){
-                                pull30_length = dbPetengoran_dataLength;
-                            } else {
-                                pull30_length = 30;
-                            }
-                            var timeSeries = []; var timeWater = [];
-                            var rmsSquare = 0;   var rmsMean = 0;
-                            timeSeries.push(30);
-                            timeWater.push(WATERLEVEL);
+            //                 // Forecast 30
+            //                 if (dbPetengoran_dataLength <= 30){
+            //                     pull30_length = dbPetengoran_dataLength;
+            //                 } else {
+            //                     pull30_length = 30;
+            //                 }
+            //                 var timeSeries = []; var timeWater = [];
+            //                 var rmsSquare = 0;   var rmsMean = 0;
+            //                 timeSeries.push(30);
+            //                 timeWater.push(WATERLEVEL);
 
-                            for (i=0 ; i<=pull30_length-1; i++){
-                                timeSeries.push(i);
-                                timeWater.push(dataDB_petengoran.rows[i].waterlevel);
-                            }   
-                            timeSeries.reverse(); 
-                            timeWater.reverse();
-                            var forecast = lsq(timeSeries, timeWater);
-                            FORECAST30 = parseFloat(forecast(31).toFixed(2));
+            //                 for (i=0 ; i<=pull30_length-1; i++){
+            //                     timeSeries.push(i);
+            //                     timeWater.push(dataDB_petengoran.rows[i].waterlevel);
+            //                 }   
+            //                 timeSeries.reverse(); 
+            //                 timeWater.reverse();
+            //                 var forecast = lsq(timeSeries, timeWater);
+            //                 FORECAST30 = parseFloat(forecast(31).toFixed(2));
 
-                            // Forecast 300
-                            var timeSeries_fc300 = []; var timeWater_fc300 = [];
-                            timeSeries_fc300.push(300);
-                            timeWater_fc300.push(WATERLEVEL);
+            //                 // Forecast 300
+            //                 var timeSeries_fc300 = []; var timeWater_fc300 = [];
+            //                 timeSeries_fc300.push(300);
+            //                 timeWater_fc300.push(WATERLEVEL);
 
-                            for (i=0 ; i<=dataDB_petengoran.rowCount-1; i++){
-                                timeSeries_fc300.push(i);
-                                timeWater_fc300.push(dataDB_petengoran.rows[i].waterlevel);
-                            }
-                            timeSeries_fc300.reverse(); 
-                            timeWater_fc300.reverse();//reverse descending data from db and mqtt
+            //                 for (i=0 ; i<=dataDB_petengoran.rowCount-1; i++){
+            //                     timeSeries_fc300.push(i);
+            //                     timeWater_fc300.push(dataDB_petengoran.rows[i].waterlevel);
+            //                 }
+            //                 timeSeries_fc300.reverse(); 
+            //                 timeWater_fc300.reverse();//reverse descending data from db and mqtt
 
-                            var forecast3 = lsq(timeSeries_fc300, timeWater_fc300);
-                            FORECAST300 = parseFloat(forecast3(301).toFixed(2));
+            //                 var forecast3 = lsq(timeSeries_fc300, timeWater_fc300);
+            //                 FORECAST300 = parseFloat(forecast3(301).toFixed(2));
 
-                            // Calculate RMS
-                            for (i=0 ; i<=dataDB_petengoran.rowCount-1; i++){
-                                rmsSquare += Math.pow(dataDB_petengoran.rows[i].alertlevel, 2);
-                            }    
-                            rmsMean = (rmsSquare / (dataDB_petengoran.rowCount));
-                            RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
-                            RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
+            //                 // Calculate RMS
+            //                 for (i=0 ; i<=dataDB_petengoran.rowCount-1; i++){
+            //                     rmsSquare += Math.pow(dataDB_petengoran.rows[i].alertlevel, 2);
+            //                 }    
+            //                 rmsMean = (rmsSquare / (dataDB_petengoran.rowCount));
+            //                 RMSROOT = parseFloat(Math.sqrt(rmsMean).toFixed(2));
+            //                 RMSTHRESHOLD = parseFloat((RMSROOT * 9).toFixed(2)); 
 
-                            // ALERT logic
-                            //Calculate Alert
-                            ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
-                            //console.log("ALERT : " + ALERTLEVEL);
-                            if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
+            //                 // ALERT logic
+            //                 //Calculate Alert
+            //                 ALERTLEVEL = (Math.abs(FORECAST300 - WATERLEVEL)).toFixed(2);
+            //                 //console.log("ALERT : " + ALERTLEVEL);
+            //                 if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
 
-                            console.log(`[U_TEWS PETENGORAN 001] OK. TIME : ${Date(DATETIME)}`);
+            //                 console.log(`[U_TEWS PETENGORAN 001] OK. TIME : ${Date(DATETIME)}`);
 
-                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
-                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
-                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
-                            insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran_stored(id, datetime, time, date, waterlevel, voltage, temperature, 
-                                forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+            //                 dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
+            //                 insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran(id, datetime, time, date, waterlevel, voltage, temperature, 
+            //                     forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
+            //                 insertQuery = await dbase_mqtt.query(`INSERT INTO mqtt_petengoran_stored(id, datetime, time, date, waterlevel, voltage, temperature, 
+            //                     forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,dataArray);
                             
-                            // PUBLISH DATA
+            //                 // PUBLISH DATA
 
-                            var isoDateString = new Date(DATETIME).toISOString();
-                            const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
-                            const jsonToPublish = {
-                                "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
-                                "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
-                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
-                            };
+            //                 var isoDateString = new Date(DATETIME).toISOString();
+            //                 const jsonToJRC = {"UTC_TIME":isoDateString, "LOCAL_TIME":DATETIME, "WATERLEVEL":WATERLEVEL, "DEVICE_TEMP":TEMP, "DEVICE_VOLTAGE":VOLTAGE}
+            //                 const jsonToPublish = {
+            //                     "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
+            //                     "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
+            //                     "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
+            //                 };
 
-                            mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
-                            mqtt_connect.publish('pumma/petengoran',JSON.stringify(jsonToPublish), {qos: 2, retain:false}, (err) => {});
-                        }                        
+            //                 mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
+            //                 mqtt_connect.publish('pumma/petengoran',JSON.stringify(jsonToPublish), {qos: 2, retain:false}, (err) => {});
+            //             }                        
                         
-                    } else {
-                        console.log(`[U_TEWS PETENGORAN 001] ERROR Data Duplicated on time : ${DATETIME}`);
-                    }    
-                }
-            }
+            //         } else {
+            //             console.log(`[U_TEWS PETENGORAN 001] ERROR Data Duplicated on time : ${DATETIME}`);
+            //         }    
+            //     }
+            // }
         }
 
         if (topic === process.env.TOPIC_PETENGORAN_IMAGE){
