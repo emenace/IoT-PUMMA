@@ -63,7 +63,7 @@ module.exports = {
                     TS = payload[TS_PATH]
                     DATE = payload[DATE_PATH];
                     WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
-                    DATA_ID = (Date.now()+(Math.floor(Math.random() * 999)));
+                    DATA_ID = (Date.parse(DATETIME)+(Math.floor(Math.random() * 999)));
                     FEEDLATENCY = Math.abs(Date.now()-Date.parse(DATETIME));
                     
                     //Data Duplication Check
@@ -191,7 +191,7 @@ module.exports = {
                 if(err) {
                     return console.log(err);
                 }
-                console.log("[U_TEWS Petengoran 001] Image file was saved!");
+                console.log("[U_TEWS Marina Jambu 004] Image file was saved!");
             });
 
             let ts = new Date(Date.now());
@@ -211,34 +211,34 @@ module.exports = {
             // });
             
             // UPLOAD TO GOOGLE DRIVE
-            const driveService = google.drive({
-                version : 'v3', auth
-            });
+            // const driveService = google.drive({
+            //     version : 'v3', auth
+            // });
 
-            const metadata = {
-                'name' : `${datetimes}_marinaj.png`,
-                'parents' : ['1u7PG5ENOpG-9V4sp5AcKRpUE2DpJcAHi']
-            }
+            // const metadata = {
+            //     'name' : `${datetimes}_marinaj.png`,
+            //     'parents' : ['1u7PG5ENOpG-9V4sp5AcKRpUE2DpJcAHi']
+            // }
             
-            let media = {
-                MimeType: 'image/png',
-                body : fs.createReadStream(`src/marinaj/image/marinaj.png`)
-            }
+            // let media = {
+            //     MimeType: 'image/png',
+            //     body : fs.createReadStream(`src/marinaj/image/marinaj.png`)
+            // }
 
-            let response = await driveService.files.create({
-                resource : metadata, 
-                media : media,
-                fields : 'id'
-            })
+            // let response = await driveService.files.create({
+            //     resource : metadata, 
+            //     media : media,
+            //     fields : 'id'
+            // })
         
-            switch(response.status){
-                case 200 : 
-                    console.log('done ', response.data.id ) 
-                    break;
-            }
+            // switch(response.status){
+            //     case 200 : 
+            //         console.log('done ', response.data.id ) 
+            //         break;
+            // }
 
             const itemCount = fs.readdirSync('src/marinaj/image/').length;
-            if (itemCount <= 50){
+            if (itemCount <= 100){
                 fs.writeFile(`src/marinaj/image/${datetimes}_marinaj.png`, data, {encoding: 'base64'}, function(err) {
                     if(err) {
                         return console.log(err);

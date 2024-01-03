@@ -1,5 +1,5 @@
 const router_ = require('express').Router();
-const global_http = require('../configuration/http_global');
+const global_http = require('./http_global');
 
 // Status Device 
 router_.get('/status', global_http.deviceStatus);

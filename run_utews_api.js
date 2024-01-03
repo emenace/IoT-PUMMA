@@ -26,20 +26,12 @@ api.use(cors({
 }));     
 
 // API HANLDING FOR GLOBAL
-const global_appRoute = require('./src/global_config/routes/route_global');
+const global_appRoute = require('./src/global_config/API/route_global');
 api.use('/', cors(), global_appRoute);
 
-// API HANLDING FOR CANTI
-const canti_appRoute = require('./src/canti/routes/route_http_canti');
-api.use('/', cors(), canti_appRoute);
-
-// API HANLDING FOR PETENGORAN
-const petengoran_appRoute = require('./src/petengoran/routes/routes_http_petengoran');
-api.use('/', cors(), petengoran_appRoute);
-
-// API HANLDING FOR PANJANG
-const panjang_appRoute = require('./src/panjang/routes/routes_http_panjang');
-api.use('/', cors(), panjang_appRoute);
+// API HANLDING FOR MARINAJ
+const marinaj_appRoute = require('./src/marinaj/routes/routes_http_marinaj');
+api.use('/', cors(), marinaj_appRoute);
 
 api.use('/', cors(), (req, res) => {
     res.status(404);
