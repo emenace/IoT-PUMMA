@@ -163,6 +163,8 @@ module.exports = {
                             //console.log("ALERT : " + ALERTLEVEL);
                             if (ALERTLEVEL >= RMSTHRESHOLD) {STATUSWARNING = "WARNING";} else STATUSWARNING = "SAFE";
 
+                            var TIMES = moment(new Date()).locale('id').format('h:mm:ss.SSS');
+
                             console.log(`[U_TEWS PANJANG 003   ] OK. TIME : ${Date(DATETIME)}`);
 
                             dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY]; 
@@ -178,7 +180,7 @@ module.exports = {
                             const jsonToPublish = {
                                 "DATETIME":DATETIME ,"TS" : TS, "Date":DATE, "tinggi":WATERLEVEL, "tegangan":VOLTAGE, 
                                 "suhu":TEMP ,"frcst30":FORECAST30, "frcst300":FORECAST300, "alertlevel":ALERTLEVEL, "rms":RMSROOT, 
-                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
+                                "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY, "data_sent":TIMES
                             };
 
                             mqtt_connect.publish('pummaUTEWS/panjang', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
@@ -203,13 +205,7 @@ module.exports = {
 
             let image = `data:image/jpeg;base64,${message}`
             var data = image.replace(/^data:image\/\w+;base64,/, '');
-            fs.writeFile(`src/panjang/image/panjang.png`, data, {encoding: 'base64'}, function(err) {
-                if(err) {
-                    return console.log(err);
-                }
-                console.log("[U_TEWS Panjang 003   ] Image file was saved!");
-            });
-
+           
             let ts = new Date(Date.now());
 
             var monthFolder = ((ts.getMonth()+1));
@@ -219,12 +215,6 @@ module.exports = {
             !fs.existsSync(`src/panjang/image/${monthFolder}/${dateFolder}`) && fs.mkdirSync(`src/panjang/image/${monthFolder}/${dateFolder}`);
 
             var datetimes = (ts.getDate() +"-"+ (ts.getMonth()+1) +"-"+ ts.getFullYear() + "_" + ts.getHours() +"."+ ts.getMinutes() +"."+ ts.getSeconds());
-           
-            // fs.writeFileSync(`src/panjang/image/${monthFolder}/${dateFolder}/${datetimes}_panjang.png`, data, {encoding: 'base64'}, function(err) {
-            //     if(err) {
-            //         return console.log(err);
-            //     }
-            // });
 
             // UPLOAD TO GOOGLE DRIVE
             const driveService = google.drive({
@@ -262,6 +252,12 @@ module.exports = {
                         return console.log(err);
                     }
                 });
+                fs.writeFile(`src/panjang/image/panjang.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                    console.log("[U_TEWS Panjang 003   ] Image file was saved!");
+                });
             } else {
                 var result = findRemoveSync('src/panjang/image/', {
                     age: { seconds: 3600 },
@@ -273,7 +269,16 @@ module.exports = {
                         return console.log(err);
                     }
                 });
+                fs.writeFile(`src/panjang/image/panjang.png`, data, {encoding: 'base64'}, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                    console.log("[U_TEWS Panjang 003   ] Image file was saved!");
+                });
             }   
+
+            
+
         }
     }
 }
