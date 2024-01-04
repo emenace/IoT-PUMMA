@@ -60,7 +60,7 @@ module.exports = {
             getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
             getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
             getDB_canti = await pool_canti.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_canti ORDER by datetime DESC LIMIT 1');
-            getDB_marinaj = await pool_canti.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_canti ORDER by datetime DESC LIMIT 1');
+            getDB_marinaj = await pool_marinaj.query('SELECT datetime, waterlevel, feedlatency FROM marinaj_waterlevel_fast ORDER by datetime DESC LIMIT 1');
 
             feedLatency_pjg = getDB_panjang.rows[0].feedlatency;
             feedLatency_ptg = getDB_petengoran.rows[0].feedlatency;

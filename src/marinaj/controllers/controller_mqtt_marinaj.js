@@ -165,7 +165,7 @@ module.exports = {
                                 "threshold":RMSTHRESHOLD, "status":STATUSWARNING, "feedLatency":FEEDLATENCY
                             };
 
-                            mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
+                            mqtt_connect.publish('pummaUTEWS/marinaj', JSON.stringify(jsonToJRC), {qos:2, retain:false});    
                             mqtt_connect.publish('pumma/marinaj',JSON.stringify(jsonToPublish), {qos: 2, retain:false}, (err) => {});
                         }                        
                         
