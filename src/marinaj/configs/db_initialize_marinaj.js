@@ -1,4 +1,4 @@
-const dbase = require('./database_marinaj'); 
+const dbase = require('../../global_config/config/database_config'); 
 
 module.exports = {
 
