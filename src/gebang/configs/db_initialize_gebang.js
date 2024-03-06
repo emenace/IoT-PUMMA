@@ -1,9 +1,9 @@
-const dbase = require('./database_marinaj'); 
+const dbase = require('../../global_config/config/database_config'); 
 
 module.exports = {
 
-    init_db_marinaj(){
-        dbase.query(`CREATE TABLE IF NOT EXISTS marinaj_waterlevel_fast (
+    init_db_gebang(){
+        dbase.query(`CREATE TABLE IF NOT EXISTS gebang_waterlevel_fast (
           id BIGINT NOT NULL PRIMARY KEY,
           datetime TIMESTAMP NOT NULL,
           time TIME NOT NULL, 
@@ -18,9 +18,9 @@ module.exports = {
           alertlevel FLOAT,
           feedlatency INT)
             `, function(err, result){
-              console.log("FastStorage Database Marina Jambu Connected");
+              console.log("FastStorage Database Gebang Petengoran Connected");
             })
-            dbase.query(`CREATE TABLE IF NOT EXISTS marinaj_waterlevel_storage(
+            dbase.query(`CREATE TABLE IF NOT EXISTS gebang_waterlevel_storage(
               id BIGINT NOT NULL PRIMARY KEY,
               datetime TIMESTAMP NOT NULL,
               time TIME NOT NULL, 
@@ -35,7 +35,7 @@ module.exports = {
               alertlevel FLOAT,
               feedlatency INT)
               `, function(err, result){
-                console.log("FullStorage Database Marina Jambu Connected");
+                console.log("FullStorage Database Gebang Petengoran Connected");
               })
     }
 }

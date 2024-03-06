@@ -1,4 +1,4 @@
-const dbase_mqtt = require('../configs/database_marinaj');
+const dbase_mqtt = require('../../global_config/config/database_config');
 const mqtt_connect = require('../../global_config/config/mqtt_config');
 const {auth} = require('../../global_config/config/google_api');
 const { google } = require('googleapis');

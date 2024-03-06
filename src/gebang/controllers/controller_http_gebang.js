@@ -21,7 +21,7 @@ module.exports = {
     async get_100Data(req,res){
         data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
             forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
-            FROM marinaj_waterlevel_fast ORDER BY datetime DESC LIMIT 100`);
+            FROM gebang_waterlevel_fast ORDER BY datetime DESC LIMIT 100`);
         
         res.status(200);
         res.send({
@@ -36,7 +36,7 @@ module.exports = {
         var count = parseInt(req.params.count);
         data = await dbase_rest.query(`SELECT datetime, time, date, waterlevel, voltage, temperature, 
             forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
-            FROM marinaj_waterlevel_fast ORDER BY datetime DESC LIMIT ${count}`);
+            FROM gebang_waterlevel_fast ORDER BY datetime DESC LIMIT ${count}`);
         res.status(200);
         res.send({
             count:data.rowCount,
@@ -54,13 +54,13 @@ module.exports = {
         var page = req.params.page;
         var offset = (page -  1) * perPage;
     
-        countData = await dbase_rest.query(`SELECT count(*) as total FROM marinaj_waterlevel_fast`);
+        countData = await dbase_rest.query(`SELECT count(*) as total FROM gebang_waterlevel_fast`);
         var totalRow = countData.rows[0].total;
         var totalPage = Math.ceil(totalRow/perPage);
 
         data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
         forecast30, forecast300, rms, threshold, alertlevel, feedlatency
-        FROM marinaj_waterlevel_fast LIMIT ${perPage} OFFSET ${offset}`)
+        FROM gebang_waterlevel_fast LIMIT ${perPage} OFFSET ${offset}`)
 
         res.json({
             totalData:totalRow,
@@ -74,8 +74,8 @@ module.exports = {
     async get_paginationCount(req, res){
         data = await dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, 
         forecast30, forecast300, rms, threshold, alertlevel, feedlatency 
-        FROM marinaj_waterlevel_fast 
-        WHERE id IN (SELECT id FROM marinaj_waterlevel_fast ORDER BY datetime DESC LIMIT ${req.params.count})
+        FROM gebang_waterlevel_fast 
+        WHERE id IN (SELECT id FROM gebang_waterlevel_fast ORDER BY datetime DESC LIMIT ${req.params.count})
         ORDER BY datetime DESC LIMIT ${req.query.limit} OFFSET ${req.query.offset}`)
         res.send({
             totalData:req.params.count,
@@ -93,7 +93,7 @@ module.exports = {
         dataColumn = req.query.data;
         if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
             dbase_rest.query(`SELECT datetime, ${dataColumn} as data
-            FROM marinaj_waterlevel_fast WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+            FROM gebang_waterlevel_fast WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message);
                     res.status(404);
@@ -122,7 +122,7 @@ module.exports = {
         //     if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime, ${dataColumn} as data
-                FROM marinaj_waterlevel_fast WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                FROM gebang_waterlevel_fast WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
@@ -157,7 +157,7 @@ module.exports = {
         dbase_rest.connect(function (err, client){
             if (err) throw err;
             dbase_rest.query(`SELECT datetime as utc, ${dataColumn} as data
-            FROM marinaj_waterlevel_storage WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
+            FROM gebang_waterlevel_storage WHERE datetime BETWEEN SYMMETRIC '${dateStart}' AND '${dateEnd} 23:59:59' ORDER BY datetime DESC`, function(err, result){
                 if (err) {
                     console.log(err.message)
                     res.status(404);
@@ -181,7 +181,7 @@ module.exports = {
     
     async get_lastImage(req, res){
         res.status(200),
-        res.sendFile('marinaj.png', {root : path.join(__dirname, '../image')})
+        res.sendFile('gebang.png', {root : path.join(__dirname, '../image')})
         console.log(`[REST-API Marina Jambu] GET DATA IMAGE`);
     },
 
@@ -196,7 +196,7 @@ module.exports = {
         //     if (err) throw err;
             if (timer == "second" || timer == "minute" || timer == "hour" || timer == "day"){
                 dbase_rest.query(`SELECT datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel
-                FROM marinaj_waterlevel_fast WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
+                FROM gebang_waterlevel_fast WHERE datetime >= now() - Interval '${time}' ${req.query.timer} ORDER BY datetime DESC`, function(err, result){
                     if (err) {
                         console.log(err.message);
                         res.status(404);
@@ -231,11 +231,11 @@ module.exports = {
 
                 // with dateRange as(
                 //     SELECT min(datetime) as first_date, max(datetime) as last_date
-                //     FROM marinaj_waterlevel_fast
+                //     FROM gebang_waterlevel_fast
                 //     WHERE datetime >= now() - Interval '${time}'
                 // )
                     
-                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from marinaj_waterlevel_fast
+                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from gebang_waterlevel_fast
                 // where datetime in(
                 //     select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
                 //     from dateRange
@@ -257,7 +257,7 @@ module.exports = {
                     ROUND(AVG(rms)::numeric, 0 ) as rms,
                     ROUND(AVG(threshold)::numeric, 0 ) as threshold,
                     ROUND(AVG(alertlevel)::numeric, 0 ) as alertlevel	
-                FROM marinaj_waterlevel_fast 
+                FROM gebang_waterlevel_fast 
                 where datetime >= now() - Interval '${time}'
                 GROUP BY 1 
                 order by 1 desc
@@ -290,11 +290,11 @@ module.exports = {
 
                 // with dateRange as(
                 //     SELECT min(datetime) as first_date, max(datetime) as last_date
-                //     FROM marinaj_waterlevel_storage
+                //     FROM gebang_waterlevel_storage
                 //     WHERE datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
                 // )
                     
-                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from marinaj_waterlevel_storage
+                // select datetime, waterlevel, voltage, temperature, forecast30, forecast300, rms, threshold, alertlevel from gebang_waterlevel_storage
                 // where datetime in(
                 //     select generate_series(first_date, last_date, '1 minute'::interval)::timestamp as date_hour
                 //     from dateRange
@@ -316,7 +316,7 @@ module.exports = {
                     ROUND(AVG(rms)::numeric, 0 ) as rms,
                     ROUND(AVG(threshold)::numeric, 0 ) as threshold,
                     ROUND(AVG(alertlevel)::numeric, 0 ) as alertlevel	
-                FROM marinaj_waterlevel_storage
+                FROM gebang_waterlevel_storage
                 where WHERE datetime BETWEEN SYMMETRIC '${starts}' AND '${end} 23:59:59'
                 GROUP BY 1 
                 order by 1 desc
