@@ -29,7 +29,7 @@ module.exports = {
             result:data.rows.reverse(),
         })
 
-        console.log("[REST-API Marina Jambu] GET 100 Data");
+        console.log("[REST-API Gebang Petengoran] GET 100 Data");
     },
 
     async get_countData(req,res){
@@ -43,7 +43,7 @@ module.exports = {
             result:data.rows.reverse(),
         })
 
-        console.log(`[REST-API Marina Jambu] GET ${count} Data`);
+        console.log(`[REST-API Gebang Petengoran] GET ${count} Data`);
         
     },
 
@@ -68,7 +68,7 @@ module.exports = {
             totalPage:totalPage,
             result:data.rows.reverse()                    
         })
-        console.log(`[REST-API Marina Jambu] GET ALL DATA BY PAGE. PAGE ${page} OF ${totalPage}`);
+        console.log(`[REST-API Gebang Petengoran] GET ALL DATA BY PAGE. PAGE ${page} OF ${totalPage}`);
     },
 
     async get_paginationCount(req, res){
@@ -82,7 +82,7 @@ module.exports = {
             count:data.rowCount,
             result: data.rows.reverse()
         })
-        console.log(`[REST-API Marina Jambu] GET DATA BY PAGE. ${req.params.count} DATA WITH LIMIT ${req.query.limit} OFFSET ${req.query.offset} `);
+        console.log(`[REST-API Gebang Petengoran] GET DATA BY PAGE. ${req.params.count} DATA WITH LIMIT ${req.query.limit} OFFSET ${req.query.offset} `);
     },
 
     //////////////////////// BY TIME ///////////////////////////
@@ -103,7 +103,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows.reverse(),
                 })
-                console.log(`[REST-API Marina Jambu] GET ${dataColumn} FOR ${time} ${timer} AS OBJECT`);
+                console.log(`[REST-API Gebang Petengoran] GET ${dataColumn} FOR ${time} ${timer} AS OBJECT`);
             });
         }else {
             res.status(404);
@@ -136,7 +136,7 @@ module.exports = {
                         count:result.rowCount,
                         result: data.reverse(),
                     })
-                    console.log(`[REST-API Marina Jambu] GET ${dataColumn} FOR ${time} ${timer} AS LIST`);
+                    console.log(`[REST-API Gebang Petengoran] GET ${dataColumn} FOR ${time} ${timer} AS LIST`);
                 });
             }else {
                 res.status(404);
@@ -172,7 +172,7 @@ module.exports = {
                     count:result.rowCount,
                     result: result.rows.reverse(),
                 })
-                console.log(`[REST-API Marina Jambu] GET ${dataColumn} DATA FROM ${dateStart} TO ${dateEnd} AS OBJECT`);
+                console.log(`[REST-API Gebang Petengoran] GET ${dataColumn} DATA FROM ${dateStart} TO ${dateEnd} AS OBJECT`);
             });          
         });
     },
@@ -182,7 +182,7 @@ module.exports = {
     async get_lastImage(req, res){
         res.status(200),
         res.sendFile('gebang.png', {root : path.join(__dirname, '../image')})
-        console.log(`[REST-API Marina Jambu] GET DATA IMAGE`);
+        console.log(`[REST-API Gebang Petengoran] GET DATA IMAGE`);
     },
 
     //////////////////////// UNDER DEVELOPMENT ///////////////////////////
@@ -213,7 +213,7 @@ module.exports = {
                         count:result.rowCount,
                         result: data.reverse(),
                     })
-                    console.log(`[REST-API Marina Jambu] GET ALL DATA FOR ${time} ${timer} AS LIST`);
+                    console.log(`[REST-API Gebang Petengoran] GET ALL DATA FOR ${time} ${timer} AS LIST`);
                 });
             }else {
                 res.status(404);
@@ -279,7 +279,7 @@ module.exports = {
                         count:result.rowCount,
                         result: data.reverse(),
                     })
-                    console.log(`[REST-API Marina Jambu] GET ALL DATA WITH TIME ${time} AND INTERVAL 1 Minute AS LIST`);
+                    console.log(`[REST-API Gebang Petengoran] GET ALL DATA WITH TIME ${time} AND INTERVAL 1 Minute AS LIST`);
                 });
     },
 
@@ -338,7 +338,7 @@ module.exports = {
                         count:result.rowCount,
                         result: data.reverse(),
                     })
-                    console.log(`[REST-API Marina Jambu] GET ALL DATA BETWEEN ${starts} AND ${end}`);
+                    console.log(`[REST-API Gebang Petengoran] GET ALL DATA BETWEEN ${starts} AND ${end}`);
                 });
     },
 }
