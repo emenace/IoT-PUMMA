@@ -166,7 +166,7 @@ module.exports = {
                             };
 
                             mqtt_connect.publish('pummaUTEWS/gebang', JSON.stringify(jsonToJRC), { qos: 2, retain: false });
-                            mqtt_connect.publish('pumma/gebang', JSON.stringify(jsonToPublish), { qos: 2, retain: false }, (err) => { });
+                            mqtt_connect.publish('pumma/petengoran', JSON.stringify(jsonToPublish), { qos: 2, retain: false }, (err) => { });
                         }
 
                     } else {
@@ -176,7 +176,7 @@ module.exports = {
             }
         }
 
-        if (topic === "PUMMA_IMAGE_GEBANGAMBU") {
+        if (topic === "u-tews_gebang/image") {
             const imagePayload = message.toString();
             fs.writeFile("src/gebang/image/gebang_b64string.txt", imagePayload, function (err) {
                 if (err) {
