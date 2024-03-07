@@ -8,5 +8,6 @@ const readDB = new Pool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_UTEWS
 });
+readDB.connect();
 
 module.exports = readDB;

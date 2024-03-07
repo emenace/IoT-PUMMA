@@ -33,6 +33,10 @@ api.use('/', cors(), global_appRoute);
 const marinaj_appRoute = require('./src/marinaj/routes/routes_http_marinaj');
 api.use('/', cors(), marinaj_appRoute);
 
+// API HANLDING FOR Gebang
+const gebang_appRoute = require('./src/gebang/routes/routes_http_gebang');
+api.use('/', cors(), gebang_appRoute);
+
 api.use('/', cors(), (req, res) => {
     res.status(404);
     res.send('404 Not Found'); // respond 404 if not available

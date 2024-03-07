@@ -15,9 +15,9 @@ const pool_canti = new Pool({
 const pool_petengoran = new Pool({
     host:host,
     port:port,
-    user:"user_petengoran",
-    password: "pwd123",
-    database: "db_petengoran"
+    user:"postgres",
+    password: "pwdSSH@123",
+    database: "pumma_utews"
 });
 const pool_panjang = new Pool({
     host:host,
@@ -58,7 +58,7 @@ module.exports = {
             var feedLatency_mrn;
 
             getDB_panjang = await pool_panjang.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_panjang ORDER by datetime DESC LIMIT 1');
-            getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_petengoran ORDER by datetime DESC LIMIT 1');
+            getDB_petengoran = await pool_petengoran.query('SELECT datetime, waterlevel, feedlatency FROM gebang_waterlevel_fast ORDER by datetime DESC LIMIT 1');
             getDB_canti = await pool_canti.query('SELECT datetime, waterlevel, feedlatency FROM mqtt_canti ORDER by datetime DESC LIMIT 1');
             getDB_marinaj = await pool_marinaj.query('SELECT datetime, waterlevel, feedlatency FROM marinaj_waterlevel_fast ORDER by datetime DESC LIMIT 1');
 
