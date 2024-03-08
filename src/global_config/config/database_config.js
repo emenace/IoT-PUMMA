@@ -9,5 +9,4 @@ const readDB = new Pool({
   database: process.env.DB_UTEWS
 });
 readDB.connect();
-
 module.exports = readDB;

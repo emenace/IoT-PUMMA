@@ -1,8 +1,9 @@
 const dbase = require('../../global_config/config/database_config'); 
 
 module.exports = {
-
+  
     init_db_gebang(){
+      
         dbase.query(`CREATE TABLE IF NOT EXISTS gebang_waterlevel_fast (
           id BIGINT NOT NULL PRIMARY KEY,
           datetime TIMESTAMP NOT NULL,
@@ -19,6 +20,7 @@ module.exports = {
           feedlatency INT)
             `, function(err, result){
               console.log("FastStorage Database Gebang Petengoran Connected");
+              if (err) throw err;
             })
             dbase.query(`CREATE TABLE IF NOT EXISTS gebang_waterlevel_storage(
               id BIGINT NOT NULL PRIMARY KEY,
@@ -36,6 +38,7 @@ module.exports = {
               feedlatency INT)
               `, function(err, result){
                 console.log("FullStorage Database Gebang Petengoran Connected");
+                if (err) throw err;
               })
     }
 }
