@@ -35,6 +35,21 @@ module.exports = {
         TEMP_PATH = "Raspi_Temp_MJ";
         VOLTAGE_PATH = "Battery_Voltage";
 
+        if (topic === "u-tews_gebang/data/raspi_temp") {
+            // const payload = JSON.parse(message.toString());
+
+            // TS = payload[TS_PATH];
+            // DATE = payload[DATE_PATH];
+            // WATERLEVEL = parseFloat(payload[WATERLEVEL_PATH]);
+
+            // // Create datetime format
+            // DATETIME = DATE + 'T' + TS + "+07:00";
+
+            // TEMP = parseFloat(payload[TEMP_PATH]);
+
+            console.log(payload);
+        }
+
         // Handling data from topic 1 (data from raspberrypi)
         if (topic === "u-tews_gebang/data/tinggi_jsn") {
 
@@ -149,7 +164,7 @@ module.exports = {
 
                             console.log(`[U_TEWS GEBANG PETENGORAN 002] OK. TIME : ${Date(DATETIME)}`);
 
-                            dataArray = [DATA_ID, DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY];
+                            dataArray = [((Date.now() + (Math.floor(Math.random() * 999)))), DATETIME, TS, DATE, WATERLEVEL, VOLTAGE, TEMP, FORECAST30, FORECAST300, RMSROOT, RMSTHRESHOLD, ALERTLEVEL, FEEDLATENCY];
                             insertQuery = await dbase_mqtt.query(`INSERT INTO gebang_waterlevel_fast(id, datetime, time, date, waterlevel, voltage, temperature, 
                                 forecast30, forecast300, rms, threshold, alertlevel, feedlatency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`, dataArray);
                             insertQuery = await dbase_mqtt.query(`INSERT INTO gebang_waterlevel_storage(id, datetime, time, date, waterlevel, voltage, temperature, 

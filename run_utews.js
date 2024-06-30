@@ -3,8 +3,8 @@ require('dotenv').config()
 // Database Initialize
 const {init_db_marinaj} = require('./src/marinaj/configs/db_initialize_marinaj')
 const {init_db_gebang} = require('./src/gebang/configs/db_initialize_gebang')
-//init_db_marinaj(); 
-//();
+init_db_marinaj(); 
+init_db_gebang();
 
 // Handle message from mqtt
 const {data_gebang} = require('../IoT-PUMMA/src/gebang/controllers/controller_mqtt_gebang')
