@@ -246,14 +246,15 @@ module.exports = {
             // }
 
             const itemCount = fs.readdirSync('src/marinaj/image/').length;
-            if (itemCount <= 100) {
+            if (itemCount <= 1000) {
                 fs.writeFile(`src/marinaj/image/${datetimes}_marinaj.png`, data, { encoding: 'base64' }, function (err) {
                     if (err) {
                         return console.log(err);
                     }
                 });
             } else {
-                var result = findRemoveSync('src/marinaj/image/', {
+                //var result = findRemoveSync('src/marinaj/image/', {
+                    findRemoveSync('src/marinaj/image/', {
                     age: { seconds: 3600 },
                     extensions: '.png',
                     limit: 50
