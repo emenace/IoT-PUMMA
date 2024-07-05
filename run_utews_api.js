@@ -7,9 +7,9 @@ const http = require('http');
 const https = require('https');
 require('dotenv').config()
 
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/privkey.pem','utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/cert.pem','utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/vps.isi-net.org/chain.pem','utf8');
+const privateKey = fs.readFileSync('/home/pumma/certificate/privkey.pem','utf8');
+const certificate = fs.readFileSync('/home/pumma/certificate/cert.pem','utf8');
+const ca = fs.readFileSync('/home/pumma/certificate/chain.pem','utf8');
 
 const credentials = {
 	key: privateKey,

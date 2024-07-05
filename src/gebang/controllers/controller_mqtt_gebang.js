@@ -29,13 +29,13 @@ module.exports = {
     async data_gebang(topic, message) {
 
         // PATH name check on .env
-        TS_PATH = "TS_Tinggi_JSN"; // Now using TSjsn;
-        DATE_PATH = "Date_Tinggi_JSN";
-        WATERLEVEL_PATH = "tinggijsn1_Mangrove"; //Now using tinggijsn; //change path based on data from raspberrypi
+        TS_PATH = "TS"; // Now using TSjsn;
+        DATE_PATH = "Date";
+        WATERLEVEL_PATH = "tinggi"; //Now using tinggijsn; //change path based on data from raspberrypi
         TEMP_PATH = "Raspi_Temp_MJ";
         VOLTAGE_PATH = "Battery_Voltage";
 
-        if (topic === "u-tews_gebang/data/raspi_temp") {
+        // if (topic === "u-tews_gebang/data/raspi_temp") {
             // const payload = JSON.parse(message.toString());
 
             // TS = payload[TS_PATH];
@@ -47,11 +47,11 @@ module.exports = {
 
             // TEMP = parseFloat(payload[TEMP_PATH]);
 
-            console.log(payload);
-        }
+        //     console.log(payload);
+        // }
 
         // Handling data from topic 1 (data from raspberrypi)
-        if (topic === "u-tews_gebang/data/tinggi_jsn") {
+        if (topic === "pummamqtt/gebang") {
 
             //Save subscribed message to payload variable
             const payload = JSON.parse(message.toString());
@@ -191,7 +191,7 @@ module.exports = {
             }
         }
 
-        if (topic === "u-tews_gebang/image") {
+        if (topic === "image/gebang") {
             const imagePayload = message.toString();
             fs.writeFile("src/gebang/image/gebang_b64string.txt", imagePayload, function (err) {
                 if (err) {
